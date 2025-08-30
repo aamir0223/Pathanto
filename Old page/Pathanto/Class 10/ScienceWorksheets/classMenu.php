@@ -1,0 +1,3 @@
+  <p class="chapters"><a href="Class 10-Science-Test1.php">Extra Question Chapter 1:Chemical Reaction And Equations</a></p>
+  <p class="chapters"><a href="important-questions-for-class-10-science-chapter-1-part-ii.php">Extra Question II Chapter 1:Chemical Reaction And Equations</a></p>
+  <p class="chapters"><a href="extra-question-chapter-2-class-10-science.php">Extra Question Chapter 2:Acid Ans Base</a></p>

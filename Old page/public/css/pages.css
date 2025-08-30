@@ -1,0 +1,104 @@
+.pages{
+    padding-top: 100px;
+}
+.circle{
+    height: 300px;
+    width: 300px;
+    border-radius:100% ;
+    background: #f96666;
+    position: absolute;
+    z-index: -1;
+    left: -100px;
+
+}
+
+.inner-circle{
+    height: 300px;
+    width: 300px;
+    border-radius:100% ;
+    background: #f96666;
+    position: absolute;
+    z-index: -1;
+    right: 0px;
+    margin-left: 50%;
+    margin-top: -30px;
+    
+
+   
+
+}
+.pages .wrapper {
+    display: flex;
+    margin-top: 30px;
+
+}
+.pages .wrapper-h1{
+    text-align: center;
+}
+.pages  .wrapper-h1 h1{
+font-size: 40px;
+color: #f96666;
+font-weight: 700;
+}
+.pages .wrapper .left{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-left:40px ;
+    width: 85%;
+}
+
+.pages .wrapper .left .card{
+    width: 200px;
+    background: #ffffff;
+    padding: 15px;
+    box-shadow: 0 0 20px 8px #d0d0d0;
+    border-radius: 12px;
+   text-align: center;
+    cursor: pointer;
+    animation: card;
+    animation-duration: 1s;
+    animation-iteration-count: 1;
+    animation-direction: alternate;
+    transition: 0.5s ease-in-out;
+    
+
+
+}
+
+
+.pages .wrapper .left .card a{
+    text-decoration: none;
+    font-size: 18px;
+    color: #000000;
+}
+.pages .wrapper .left .card:hover{
+    box-shadow: 0 0 20px 8px #d0d0d0;
+    background-color: #f96666;
+    color: #ffff;
+    opacity: 0.8;
+    transition: 0.5s ease-in-out;
+}
+.pages .wrapper .left .card a:hover{
+  
+    color: #ffff;
+  
+}
+.pages .wrapper .left .card a .card-body img{
+    width: 100px;
+    height: 100px;
+    
+}
+
+
+@keyframes card {
+    0% {
+    transform: scale(0);
+    }
+     
+    100% {
+      transform: scale(1);
+    
+    }
+  }
+  

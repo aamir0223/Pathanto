@@ -1,0 +1,201 @@
+/*
+Theme Name: Education Empowerment
+Template: bizberg
+Text Domain: education-empowerment
+Author: Bizberg Themes
+Author URI: https://bizbergthemes.com/
+Theme URI: https://bizbergthemes.com/downloads/education-empowerment/
+License: GNU General Public License v3 or later
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
+Description: Education Empowerment is child theme of Bizberg WordPress Theme. Theme is a clean & modern Education WordPress Theme. Education Empowerment is suitable for any tuition, marketing, book selling, university, workshop, college, school, course hub, training center, blogging or any kind of educational institution. Also Education Empowerment theme is a perfect solution for your educational websites. This Free WordPress theme is fully responsive, cross-browser compatible, translation ready & SEO friendly. If you run into any problem while using our theme, you can refer to extensive documentation or contact our friendly support team. It fully supports Elementor, all the sections are made from Elementor.
+Tags: custom-logo,custom-menu,featured-images,threaded-comments,translation-ready,left-sidebar,right-sidebar,grid-layout,theme-options,blog,news,portfolio
+Version: 0.3
+Requires PHP: 5.6
+Tested up to: 6.2
+*/
+
+.navbar-default .navbar-nav > li > a {
+    letter-spacing: 0;
+}
+
+.blog-lists.blog-nosidebar-1 .blog-listing.no-sidebars .blog-post.blog-large .entry-header {
+    margin-top: 0 !important;
+}
+
+.feature-style1 {
+    background-color: #fff;
+    border: 1px solid rgba(210,210,210,.5);
+    border-radius: 20px;
+    margin-bottom: 30px;
+    overflow: hidden;
+    padding: 60px 60px 45px 60px;
+    position: relative;
+    text-align: center;
+    transition: all ease .4s;
+    z-index: 1;
+}
+
+.feature-style1:before, .feature-style1:after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    z-index: -1;
+    transition: all ease .4s;
+    border: 2px solid #ffb606;
+}
+
+.feature-style1:before {
+    left: 0;
+    top: 0;
+    border-radius: 20px 0 0 20px;
+    border-right: none;
+}
+
+.feature-style1 .feature-icon {
+    height: 150px;
+    width: 150px;
+    line-height: 168px;
+    margin: 0 auto 25px auto;
+    position: relative;
+    z-index: 1;
+}
+
+.vs-circle {
+    display: block;
+    width: 168px;
+    height: 168px;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0);
+    background-size: 100% 100%;
+    background-image: linear-gradient(var(--circle-angle, -60deg), var(--circle-bg, #2F2552) var(--circle-count, 55%), transparent var(--circle-count, 55%));
+}
+
+.feature-style1 .vs-circle {
+    --circle-size: 168px;
+    --circle-bg: #ffb60614;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: -1;
+}
+
+.feature-style1 .feature-title {
+    text-transform: capitalize;
+    padding-bottom: 10px;
+    font-size: 25px;
+    line-height: 32px;
+    font-family: 'MontserratRegular';
+}
+
+.feature-style1 .feature-title a{
+    color: #ffb606;
+}
+
+.feature-icon i {
+    font-size: 100px;
+    padding-top: 24px;
+    color: #ffb606;
+}
+
+.feature-style1:after {
+    right: 0;
+    bottom: 0;
+    border-left: none;
+    border-radius: 0 20px 20px 0;
+}
+
+.feature-style1:hover, .slick-center .feature-style1 {
+    border-color: rgba(0,0,0,0);
+    box-shadow: 8.55px 17.49px 24px rgba(35,31,32,.09);
+}
+
+.feature-style1:hover:before, .feature-style1:hover:after, .slick-center .feature-style1:before, .slick-center .feature-style1:after {
+    width: 50%;
+    opacity: 1;
+    visibility: visible;
+}
+
+.services{
+    padding: 80px 0;
+}
+
+.top_posts .title_wrapper{
+    text-align: center;
+    padding-bottom: 30px;
+}
+
+.top_posts .title_wrapper h3 {
+    font-family: 'MontserratRegular';
+    font-size: 25px;
+    text-transform: uppercase;
+    color: #000;
+}
+
+.top_posts .post2_wrapper .item {
+    background: #ffb6062b;
+    padding: 20px;
+    border-radius: 60px;
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+    font-family: 'MontserratRegular';
+    line-height: 20px;
+}
+
+.top_posts .post2_wrapper .item i {
+    font-size: 35px;
+    color: #000;
+}
+
+.top_posts .post2_wrapper .item span {
+    background: #fff;
+    padding: 13px;
+    display: inline-flex;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+}
+
+.top_posts .post2_wrapper a {
+    font-size: 16px;
+    color: #000;
+}
+
+.top_posts .post2_wrapper{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    padding: 0 20px;
+}
+
+.top_posts{
+    padding-bottom: 50px;
+}
+
+.top_posts .post2_wrapper .item:hover {
+    background: #000;
+}
+
+.top_posts .post2_wrapper a:hover {
+    color: #fff !important;
+}
+
+.home.page-template-default.page .two-tone-layout .bizberg_blog_content .detail-content.single_page{
+    padding-top: 15px;
+}
+
+@media (max-width: 400px){
+
+    .top_posts .post2_wrapper {
+        grid-template-columns: 1fr;
+    }
+
+}

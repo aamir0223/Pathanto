@@ -1,0 +1,1254 @@
+.price {
+  /* padding: 2% 3%; */
+}
+/*sticky header position*/
+.sticky.is-sticky {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+}
+
+.top-ads {
+  width: 80%;
+  height: 100px;
+  margin: 40px;
+  margin-left: 60px;
+}
+
+/*  ------------     top header with with logo scroreUP------------- */
+html {
+  height: 100vh; /* For 100% screen height */
+}
+body {
+  font-family: Georgia, serif;
+  
+  margin: 0;
+  height: 100vh; /* For 100% screen height */
+}
+#below-header {
+  background-color: #95389e;
+  color: #ffffff;
+  margin-bottom: 60px;
+  padding: 100px;
+}
+
+.button {
+  margin: 20px 2px 0px 20px;
+}
+.image {
+  width: 60%;
+}
+
+.logoimage {
+  border-radius: 50% !important;
+}
+#logo-header {
+  margin-right: 0px;
+}
+.maths-logo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50px;
+
+  background-color: #ec0101;
+}
+.text-logo-maths {
+  position: relative;
+  top: 30%;
+  left: 6%;
+  transform: rotate(-27deg);
+
+  font-size: 15px;
+  font-weight: bolder;
+  color: white;
+}
+
+.top-header-online {
+  float: left;
+  margin-right: 10px;
+}
+.fa-address-card {
+  font-size: 40px;
+}
+.fa-whatsapp {
+  font-size: 20px;
+  color: green;
+}
+.fa-envelope {
+  font-size: 20px;
+  color: red;
+}
+
+.contct {
+  width: 290px;
+  height: 65px;
+  position: relative;
+  right: 10px;
+  margin-right: 0px;
+  float: right;
+}
+
+.fa-h-square {
+  color: #00bcd4;
+}
+.navbar-brand {
+  color: #6f4a8e;
+  font-size: 30px;
+  margin-left: 50px;
+}
+.navbar-brand:hover {
+  color: #f09ae9;
+}
+/*  ------End------     top header with with logo scroreUP------------- */
+
+/* -----------------------------------------------------------------navigation and menu----------------------------------------------------------------- */
+.navbar {
+  background-color: #313131 !important;
+  padding: 0px;
+
+  /* box-shadow: -5px 5px 10px #95389e, 5px -5px 10px #95389e; */
+}
+
+.navbar .navbar-nav .nav-item {
+  padding: 0px 3px 0px 2px;
+}
+
+.navbar .navbar-nav .nav-item .nav-link {
+  color: #ffff;
+  font-size: 15px;
+}
+#header {
+  position: sticky !important;
+  top: 0px;
+  z-index: 1;
+  
+}
+.home-botton {
+  margin-left: 30px !important;
+}
+/* ------------------------------------End-----------------------------navigation and menu----------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------- index chapter button----------------------------------*/
+
+/* ----index page-----------*/
+.row {
+  margin: 0;
+}
+.container-index{
+  height: auto;
+  width: 100%;
+}
+.ads-container{
+  max-width: 1200px;
+  margin: auto;
+  height: auto;
+}
+
+
+
+
+
+.container-top {
+ background: #313131;
+ /* background: #e2f2ff; */
+  height: 400px;
+  display: flex;
+  align-items: center;
+  padding-left: 60px;
+}
+.text-container{
+  padding-top: 10px;
+  color: #ffffff;
+  width: 50%;
+  margin: auto;
+}
+.card-container{
+  width: 100%;
+  margin: auto;
+  text-align: center;
+  margin-bottom: 100px;
+}
+.card-container:last-child
+{
+  margin-bottom: 80px;
+}
+
+.type-card{
+  position: absolute;
+  width: 290px;
+  height: auto;
+  background: #000000;
+  box-shadow: 0px 4px 30px rgba(0, 0, 0, 0.5);
+  border-radius: 6px;
+  margin-left: 50px;
+  margin-top: -300px;
+  right: 40px;
+  padding: 20px;
+
+}
+.type-card:nth-child(2)
+{
+  margin-top: -195px;
+  margin-right: 140px;
+ 
+ 
+}
+.type-card:nth-child(3)
+{
+  margin-top: -85px;
+  margin-right: 300px;
+
+}
+.line__1,
+.line__2 {
+  white-space: nowrap; 
+  overflow: hidden; 
+  font-size: 14px;
+  color: #ffffff;
+}
+.line__1 {
+  border-right: 1px solid #1D1E22;
+  color: #DE7300;
+  /* define animation types for text + cursor */
+  animation: animated-text__1 6s steps(30, end) 1s 1 normal both,
+    animated-cursor__1 900ms steps(30, end) infinite;
+    animation-iteration-count:  infinite;
+  
+}
+
+.line__2 {
+ 
+margin: auto;
+color: #74B087 ;
+width: 100px;
+margin-top: -5px;
+
+}
+.line__1:nth-child(3){
+  color: #FFDE00;
+}
+
+@keyframes animated-cursor__1 {
+  from {
+    border-right-color: #ffffff;
+  }
+  to {
+    border-right-color: #1D1E22;
+  }
+}
+
+
+@keyframes animated-text__1 {
+  from {
+    width: 0;
+  }
+  to {
+    width: 250px;
+  }
+}
+
+@keyframes animated-text__2 {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100px;
+  }
+}
+
+.card-container-h1{
+  font-size: 30px;
+  width: 1200px;
+  margin: auto;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+  
+}
+
+.card-container{
+  width: 1200px;
+  margin: auto;
+  margin-bottom: 50px;
+}
+.sub-title {
+  font-size: 16px;
+
+  color:#000000;
+}
+.mobile-card {
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 10px;
+
+  width:160px;
+}
+
+.class-ti {
+  font-size: 13px;
+    color:#000000;
+    margin-bottom: -1px;
+}
+.svg-img{
+  width: 70px;
+  height: 70px;
+
+}
+.card-solution-link {
+  color: #fff;
+}
+.card-solution-link:hover {
+  color: #fff;
+}
+.btn-lg {
+  background: #ae4ccf;
+  outline: none !important;
+  border: none;
+  padding: 8px;
+  font-size: 15px;
+  color: #fff;
+}
+
+.container {
+  margin-top: 100px;
+  min-height: 100%;
+}
+
+/* --End--index page-----------*/
+
+.solution {
+  margin-bottom: 100px;
+}
+
+.Ncrt-img {
+  height: 135px;
+}
+
+.Slogo {
+  position: absolute;
+  border-radius: 100%;
+  width: 100px;
+  height: 100px;
+  left: 16px;
+}
+
+.Ncrt {
+  color: #6f4a8e;
+
+  padding-top: 95px;
+}
+
+.btn2 {
+  border: 1px solid #6f4a8e;
+  background: #6f4a8e;
+  padding: 5px;
+  font-size: 20px;
+  color: white;
+
+  width: 40px;
+  position: relative;
+  border-left-width: 0px;
+  padding-left: 0px;
+
+  position: relative;
+  right: 40px;
+}
+
+/* adjecting chp-10 btn*/
+.btn5 {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  height: 75px;
+  width: 50px;
+}
+.btn1 {
+  border: 1px solid #6f4a8e;
+  background: none;
+  padding: 5px 60px 5px 10px;
+  font-size: 19px;
+  color: #6f4a8e;
+  outline: none;
+  position: relative;
+  margin: 5px;
+  margin-right: 0;
+  border-right-width: 0px;
+}
+.btn1 a {
+  text-decoration: none;
+  color: #6f4a8e;
+}
+.btn1:hover {
+  color: #ffff;
+}
+
+.btn1::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background: #00bcd4;
+  z-index: -1;
+  transition: 0.8s;
+  top: 0;
+}
+
+.btn1:hover::before {
+  width: 100%;
+}
+
+/* --------------------------------------------END------------------------------- index chapter button----------------------------------*/
+
+/*------------------------------------------------------------------ droupdown menu-------------------------------------*/
+.dropbtn {
+  /* background-color: #95389e; */
+  background-color: transparent;
+  color: white;
+  padding: 10px;
+
+  border: none;
+}
+
+.dropdown {
+  position: relative;
+
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 30px;
+  left: 20px;
+  background-color: #313131;
+  min-width: 150px;
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: #ffff;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+
+  padding-left: 30px;
+}
+
+.dropdown-content a:hover {
+  background-color: #440047;
+}
+
+.dropdown:hover .dropdown-content {
+  display: inline-block;
+}
+
+.dropdown:hover .dropbtn {
+  background-color: #313131;
+}
+/*--------------SUb menu--------- droupdown menu-------*/
+.dropdown-content1 {
+  display: none;
+  position: absolute;
+
+  background-color:#313131;
+  min-width: 150px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+.dropdown-content1 a {
+  color: #ffff;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  padding-left: 30px;
+}
+
+.dropdown1:hover .dropdown-content1 {
+  display: inline-block;
+}
+/*--------------SUb menu-----END---- droupdown menu-------*/
+
+/*------------------------------END----- droupdown menu------------------------------------------------------------*/
+
+/* -----------------------------------------------------------navigation for mobile csss--------------------------*/
+/* --------- menu link toggle slide ------      */
+.panel,
+.pane2 {
+  background: #12cad6;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  color: #212121;
+  display: none;
+  padding-left: 10px;
+
+  z-index: 1;
+  /*width: 600px;*/
+  width: 100%;
+  position: absolute;
+}
+/* ------End--- menu link toggle slide ------      */
+.mobile-header {
+  display: none;
+}
+
+/* ----------   home carousel---------*/
+#multi-item-example,
+.carousel-inner {
+  margin-top: 50px;
+}
+/* -------End---   home carousel---------*/
+/* ---------- all icon----------*/
+.fa-bars {
+  color: rgba(0, 0, 0, 0.4);
+  line-height: 1;
+}
+
+/* ------------End------- all icon*/
+/* ---------------------------------------Home------------- coursel css---------------------*/
+.controls-top {
+  text-align: center;
+}
+.btn-floating {
+  background: #6f4a8e;
+  padding: 8px;
+  border-radius: 50%;
+  margin-right: 10px;
+  font-size: 15px;
+}
+
+/*----------------------Home---------------END coursel css--------------------------*/
+
+/* -----------------------------------------------------------------side bar card login and registe---------------------------------------------------------*/
+.online-card-hading {
+  text-align: center;
+  font-size: 40px;
+  padding-top: 20px;
+  color: #6f4a8e;
+  margin-bottom: 0px;
+}
+.online-card-hading-class {
+  color: skyblue;
+  font-size: 30px;
+  text-align: center;
+  margin-top: 0px;
+}
+.card-body .online-class-a {
+  background: skyblue;
+  color: white;
+  padding: 10px;
+  border-radius: 40px;
+  text-decoration: none;
+}
+#class-card {
+  background: #ff7171;
+}
+
+.card {
+  padding: 0px;
+  border-radius: 10px;
+  box-shadow: -5px 5px 10px #a4a4a4, 5px -5px 10px #ffffff;
+}
+.chapter-button-card {
+  margin-top: 50px;
+  box-shadow: 0 5px 8px #3db2ff;
+  overflow: hidden;
+  width: 100%;
+  margin-bottom: 50px;
+  border-radius: 15px;
+  z-index: 1;
+  padding: 20px;
+}
+.chapter-button-card button {
+  border: 1px solid #3db2ff !important;
+  padding: 5px 40px !important;
+  outline: none;
+}
+.btn-reg {
+  margin-right: 0px;
+  margin-left: 10px;
+  width: 100%;
+}
+.reg-form {
+  margin-top: 50px;
+  box-shadow: 2px 2px 5px 5px rgba(0, 0, 0, 0.5);
+  padding: 5px;
+}
+#side {
+  margin-top: 50px;
+  position: sticky;
+  top: 50px;
+}
+.arrow {
+  font-size: 30px;
+}
+
+/*-----------------------------------------------------------------all chapter css------------------------------------------------------------------*/
+
+/*----------------------- topic----------------------- */
+.table-bordered tr td {
+  text-align: left;
+}
+
+.topic {
+  padding: 25px;
+  border-radius: 20px;
+  margin-top: 50px;
+  box-shadow: 0 16px 20px rgba(0, 0, 0, 0.1);
+
+  box-sizing: border-box;
+  margin-bottom: 50px;
+}
+.subject {
+  margin-left: 15px;
+  font-family: "Gill Sans", sans-serif;
+  letter-spacing: 2px;
+  font-size: 25px;
+  color: #6f4a8e !important;
+  font-weight: bolder;
+  margin-bottom: 1px;
+}
+.chapters {
+  margin-bottom: 1px;
+}
+.chapters a {
+  font-size: 15px;
+  color: #844685;
+}
+.chapters a:hover {
+  color: #848ccf;
+  text-decoration: none;
+}
+
+/*-------- subject-mathts =---------------------------- */
+
+.exercise-btn {
+  margin-top: 30px;
+  position: relative;
+}
+
+.btn {
+  margin: 0 0 4px 0;
+  outline: none;
+}
+.chapter {
+  margin-top: 20px;
+  color: #41444b;
+  background-color: #00b7c2;
+  width: 100%;
+  height: 40px;
+  text-align: center;
+  font-size: 30px;
+}
+.chapter-name {
+  margin-top: 30px;
+  background-color: #dd2c00;
+
+  text-align: center;
+  padding: 8px;
+  color: #ffff;
+  font-size: 20px;
+}
+.exercise {
+  text-align: center;
+  font-size: 30px;
+  color: #8675a9;
+}
+.question {
+  color: #dd2c00;
+  font-size: bolder;
+}
+.answer {
+  color: #a8df65;
+}
+.mathsPageImg {
+  width: 100%;
+}
+/* -----------------  differnce question like coloumn -----------*/
+.row1 {
+  display: flex;
+}
+
+.column {
+  flex: 50%;
+  padding: 10px;
+  height: 410px;
+}
+table,
+th,
+td {
+  border: 1px solid yellow;
+}
+th,
+td {
+  padding: 15px;
+}
+tr {
+  text-align: center;
+}
+/*  -------for fracton value----------------------------- */
+.frac {
+  display: inline-block;
+  position: relative;
+  vertical-align: middle;
+  letter-spacing: 0.001em;
+  text-align: center;
+}
+.frac > span {
+  display: block;
+  padding: 0.1em;
+}
+.frac span.bottom {
+  border-top: thin solid black;
+}
+.frac span.symbol {
+  display: none;
+}
+/* -----------------------classs 6 science------*/
+.math-icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 140px;
+}
+.Science,
+.maths {
+  margin-bottom: 50px;
+}
+.sc-chapter-name {
+  text-align: center;
+  background: #6f4a8e;
+  color: #ffff;
+  padding: 3px;
+  padding-bottom: 10px;
+}
+.sc-exercise {
+  color: #6f4a8e;
+  text-align: center;
+}
+
+.chapter-introduction {
+  color: grey;
+}
+
+/* ---------------end------classs 6 science------*/
+
+/* ------------------------------ comment--------------------------------------------------*/
+.comment {
+  margin-top: 50px;
+  background-color: #f4f4f2;
+  padding: 10px;
+}
+.comment-name {
+  font-size: 20px;
+  color: #3797a4;
+  text-transform: uppercase;
+  margin-bottom: 0px;
+  width: 100%;
+  word-wrap: break-word;
+}
+.comment-text {
+  background-color: #eeecda;
+  color: black;
+  width: 100%;
+  word-wrap: break-word;
+}
+.Q1ch3-3 {
+  width: 700px;
+  height: 400px;
+}
+.Q2ch3-5 {
+  width: 250px;
+}
+.metal-reactive {
+  display: none;
+}
+/* ----- pdf style ---*/
+.circle {
+  width: 4rem;
+  height: 4rem;
+  margin-left: 50px;
+  margin-bottom: 10px;
+  border-radius: 50%;
+  font-size: 30px;
+  color: #fff;
+  text-align: center;
+  padding-top: 7px;
+  background: #845ec2;
+}
+/* ----- pdf style ---*/
+
+/*-----------------------------------------------------------------------end --all chapter css------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------footer------------------------------------------------------------------*/
+.footer {
+  padding: 50px 15px 10px 15px;
+  background-color: #131313;
+  text-align: center;
+  color: white;
+}
+.vl {
+  margin-top: 8px;
+  border-left: 1px solid black;
+  height: 25px;
+}
+#easy {
+  text-align: center;
+}
+.cheak {
+  padding: 30px;
+}
+.icon {
+  color: #95389e;
+  font-size: 32px;
+}
+
+/*------- Resposible for mobile appp cssss--------------------------------------------*/
+
+@media screen and (max-device-width: 990px), screen and (max-width: 990px) {
+  body {
+    margin: 0px;
+    padding: 0px;
+  }
+  .sub-title {
+    font-size: 18px;
+    color: #fff !important;
+    padding-bottom: 15px !important;
+  }
+  .mobile-card {
+    text-align: center;
+    background: #00bcd4;
+    padding: 20px 8px;
+    border-radius: 15px;
+    box-shadow: -5px 5px 10px #a4a4a4, 5px -5px 10px #ffffff;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+  .class-ti {
+    font-size: 14px;
+    color: #fff !important;
+    padding-bottom: 15px !important;
+  }
+
+  .btn-lg {
+    background: rgb(29, 185, 195);
+    outline: none !important;
+    border: none;
+    padding: 5px! important;
+    font-size: 14px;
+    color: #fff !important;
+  }
+  .card-solution-link {
+    color: #fff !important;
+  }
+
+  .top-ads {
+    width: 100% !important;
+    height: 60px !important;
+  }
+  .btn-floating {
+    background: #00bcd4 !important;
+
+    font-size: 10px !important;
+  }
+  .card-container{
+    width: 100%;
+    margin: unset;
+  }
+  .container-top{
+   flex-direction: column;
+   padding-left: 10px;
+  }
+  .text-container{
+          width: 100%;
+          padding: 15px;
+          margin: unset;
+  }
+  .text-container h1{
+    font-size: 24px;
+  }
+  .text-container p{
+    font-size: 12px;
+  }
+  .type-card{
+    margin-top: unset;
+    right: 0px;
+  }
+  .type-card:nth-child(2){
+    margin-top: unset;
+    margin-top: 105px;
+    margin-right: 80px;
+  }
+  .type-card:nth-child(3){
+    margin-top: unset;
+    margin-right: 0px;
+    margin-top: 210px;
+    display: none;
+  }
+  .card-container-h1{
+    width: 100%;
+    padding-left: 20px;
+
+  }
+
+  .solution {
+    margin-bottom: 20px !important;
+  }
+
+  .logo a {
+    font-size: 40px;
+  }
+  .fa-h-square {
+    font-size: 40px;
+
+    color: #00bcd4;
+    padding-top: 20px;
+  }
+  #header {
+    display: none;
+  }
+
+  .mobile-header {
+    display: block;
+  }
+  .more-drop {
+    display: none;
+    position: absolute;
+    top: 40px;
+    right: 3px;
+    background: #00bcd4 !important;
+    min-width: 100px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  .dropdown:hover .more-drop {
+    display: inline-block;
+  }
+  .more-drop a {
+    color: #ffff;
+    padding: 5px 10px;
+    text-decoration: none;
+    display: block;
+    font-size: 15px !important;
+  }
+  .fa-h-square {
+    color: white;
+  }
+  .footer {
+    background-color: #00bcd4 !important;
+    color: white;
+  }
+  .topic {
+    display: none;
+  }
+  .like-div {
+    color: #00bcd4 !important;
+  }
+
+  .btnn {
+    background-color: #00bcd4 !important;
+  }
+
+  /* -----------------------------------------       Button Drop down--------------------------------------------*/
+  /*droup doun sub menu--*/
+  .dropdown-content1 {
+    right: 130px !important;
+    min-width: 60px !important;
+    background: #00bcd4 !important;
+  }
+  .dropdown-content1 a {
+    font-size: 14px !important;
+  }
+
+  /*--END---droup doun sub menu--*/
+
+  .dropbtn {
+    background-color: #00bcd4 !important;
+    /*font-size: 20px;*/
+    font-size: 5px;
+  }
+
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .dropdown-content {
+    background-color: #00bcd4 !important;
+  }
+
+  .dropdown-content a:hover {
+    background-color: #ffc1f3 !important;
+  }
+
+  .dropdown:hover .dropdown-content {
+    display: block;
+  }
+
+  .dropdown:hover .dropbtn {
+    background-color: #00bcd4 !important;
+  }
+
+  /* -----------------------------------------  end     Button Drop down--------------------------------------------*/
+
+  /*---  Rgister card---*/
+
+  .card1 {
+    position: absolute;
+    top: 0;
+    right: 5px;
+    margin-top: 0px;
+    /*width: 50%;*/
+    width: 50%;
+  }
+  .comment {
+    width: 100%;
+    margin-left: 5px;
+    margin-top: 50px;
+  }
+
+  .chapter-button-card {
+    width: 100%;
+    height: 130px;
+  }
+
+  /*--End-  Rgister card---*/
+
+  #side {
+    margin-bottom: 120px;
+  }
+  #class-card {
+    margin-bottom: 50px;
+    height: 600px;
+    width: 100%;
+  }
+  .reg-form {
+    width: 100%;
+  }
+  /*.form-group
+{
+  padding 10px;
+}*/
+  input[type="text"],
+  input[type="email"] {
+    text-align: center;
+    font-weight: lighter;
+    font-size: 15px;
+    height: 40px;
+  }
+  #col {
+    width: 290px !important;
+  }
+  /*  adjesting button chpter gintii--*/
+  .btn3 {
+    position: absolute;
+    top: 3px;
+    right: 30px !important;
+    width: 60px !important;
+    height: 72px;
+  }
+  .btn4 {
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    height: 42px;
+  }
+  /*   adjestin button chpter gintii--*/
+
+  .btn2 {
+    background: #00bcd4 !important;
+
+    width: 40px;
+  }
+  .btn1::before {
+    background: #6f4a8e !important;
+  }
+  .btn1 {
+    padding: 4px 50px 4px 1px;
+    width: 80%;
+  }
+  #index-btn1 {
+    padding: 5px 50px 5px 0px;
+  }
+  .sc-chapter-name {
+    background: skyblue !important;
+    width: 100%;
+  }
+
+  .navbar-brand {
+    color: #dd2c00 !important;
+
+    letter-spacing: 2px;
+  }
+  .navbar-brand:hover {
+    color: #8675a9 !important;
+  }
+  .mobile-header {
+    background: #00bcd4;
+  }
+  .navItem {
+    display: inline-block;
+
+    /* padding: 5px 40px 5px 40px;*/
+  }
+  .navItem button {
+    font-size: 15px;
+  }
+  .navItem a {
+    font-size: 20px;
+  }
+
+  .navlink {
+    color: white;
+    font-size: 10px;
+    font-weight: 100;
+  }
+
+  .menu {
+    padding: 0.5rem 1rem;
+    font-size: 2rem;
+    line-height: 1;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    border-color: rgba(0, 0, 0, 0.5);
+    box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+  }
+
+  .jumbotron {
+    margin-top: 10px;
+  }
+  /*  home toggle menu */
+
+  .home-menu-item {
+    text-decoration: none;
+    font-size: 20px;
+    color: white;
+    display: block;
+
+    padding-left: 10px !important;
+
+    margin-right: 15px;
+  }
+  .home-menu-item:hover {
+    text-decoration: none;
+    color: white;
+    text-transform: uppercase;
+  }
+  /* End home toggle menu */
+
+  /*.container
+{
+  font-size: 3rem;
+  padding-right: 0px;
+  padding-left: 0px;
+
+ 
+}*/
+
+  .contct {
+    /*width: 450px;
+  height: 100%;
+
+  font-size: 25px;*/
+  }
+  .header-contact {
+    float: left;
+  }
+  .btn-floating {
+    background: #6f4a8e;
+    padding: 8px;
+    border-radius: 50%;
+    margin-right: 10px;
+    font-size: 40px;
+  }
+  /*h6
+{
+  font-size: 50px;
+}*/
+  .container {
+    padding-right: 0px;
+    padding-left: 0px;
+  }
+  #class6-col-10,
+  .col-sm {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+  .Q1ch3-3 {
+    width: 100% !important;
+    padding: 0px !important;
+  }
+  .Q2ch3-5 {
+    width: 100%;
+  }
+  .Q2ch3-5n {
+    width: 100%;
+  }
+  .digestive {
+    height: 300px;
+  }
+  .chapters a {
+    color: white !important;
+  }
+  .chapters a:hover {
+    color: #97e5ef !important;
+  }
+  .reac {
+    display: none;
+  }
+  .metal-reactive {
+    display: block;
+  }
+  b {
+    color: #7579e7 !important;
+  }
+  .A {
+    height: 40px;
+    width: 40px;
+  }
+  .B {
+    width: 90px;
+  }
+  .mode {
+    width: 200px;
+  }
+  .dis {
+    width: 230px;
+  }
+  #side {
+    display: none;
+  }
+  .col-sm-12 {
+    margin-bottom: 20px;
+  }
+
+  .circle {
+    width: 3rem !important;
+    height: 3rem !important;
+    margin-left: 28px !important;
+    margin-bottom: 10px !important;
+
+    font-size: 25px !important;
+  }
+}
+@media only screen and (max-width: 990px) and (min-width: 600px) {
+  .btn3 {
+    position: absolute !important;
+    top: 3px !important;
+    right: 100px !important;
+    height: 42px !important;
+  }
+  .btn5 {
+    display: none !important;
+  }
+}
+
+/*  responsive for tab-------------------*/
+
+/*  responsive for tab--------------------------------*/
+/* ---------------------------------------------    End       Resposible for mobile appp cssss--------------------------------------------*/
