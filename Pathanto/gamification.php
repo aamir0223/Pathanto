@@ -161,12 +161,16 @@ function get_leaderboard($period = 'all', $limit = 10): array
 {
     global $conn;
     if ($period === 'weekly') {
-        $sql = "SELECT user_id, SUM(points) AS total, MAX(created_at) AS last_activity " .
-               "FROM user_points WHERE YEARWEEK(created_at, 1) = YEARWEEK(NOW(), 1) " .
-               "GROUP BY user_id ORDER BY total DESC, last_activity DESC LIMIT ?";
+        $sql = "SELECT u.id AS user_id, u.name, SUM(p.points) AS total, " .
+               "MAX(p.created_at) AS last_activity " .
+               "FROM user_points p JOIN users u ON p.user_id = u.id " .
+               "WHERE YEARWEEK(p.created_at, 1) = YEARWEEK(NOW(), 1) " .
+               "GROUP BY u.id, u.name ORDER BY total DESC, last_activity DESC LIMIT ?";
     } else {
-        $sql = "SELECT user_id, SUM(points) AS total, MAX(created_at) AS last_activity " .
-               "FROM user_points GROUP BY user_id ORDER BY total DESC, last_activity DESC LIMIT ?";
+        $sql = "SELECT u.id AS user_id, u.name, SUM(p.points) AS total, " .
+               "MAX(p.created_at) AS last_activity " .
+               "FROM user_points p JOIN users u ON p.user_id = u.id " .
+               "GROUP BY u.id, u.name ORDER BY total DESC, last_activity DESC LIMIT ?";
     }
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
