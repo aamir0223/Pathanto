@@ -1,5 +1,6 @@
 
 
+<?php require_once __DIR__ . '/auth.php'; ?>
 <section id="header">
 
   <nav class="navbar navbar-expand-lg  navbar-light  " data-toggle="sticky-onscroll">
@@ -144,14 +145,28 @@
           </div>
         </li>
         
-          <li class="nav-item ">
+        <li class="nav-item ">
           <div class="dropdown">
             <button class="dropbtn" style="background:transparent" onclick="window.open('https://pathanto.com/Pathanto/summaries/subject-selection','_self')">Summaries</button>
 
           </div>
         </li>
 
-
+        <?php if (current_user_id()): ?>
+        <li class="nav-item">
+          <a class="nav-link" href="/Pathanto/dashboard.php">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/Pathanto/logout.php">Logout</a>
+        </li>
+        <?php else: ?>
+        <li class="nav-item">
+          <a class="nav-link" href="/Pathanto/login.php">Login</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/Pathanto/register.php">Register</a>
+        </li>
+        <?php endif; ?>
 
       </ul>
 
