@@ -17,18 +17,13 @@ if (!$conn->query($createAttempts)) {
     error_log('Failed creating question_attempts table: ' . $conn->error);
 }
 
-// Dashboard relies on points and streak tables; create them if missing.
+// Dashboard relies on a points table; create it if missing.
 $conn->query("CREATE TABLE IF NOT EXISTS user_points (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     points INT NOT NULL,
     reason VARCHAR(255) DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)");
-$conn->query("CREATE TABLE IF NOT EXISTS user_streaks (
-    user_id INT PRIMARY KEY,
-    current_streak INT NOT NULL DEFAULT 0,
-    last_active_date DATE
 )");
 
 /**
@@ -46,6 +41,40 @@ function record_attempt($userId, $questionId, $correct, $topicId, $difficulty, $
     $stmt->bind_param('iiiisi', $userId, $questionId, $c, $topicId, $difficulty, $timeTaken);
     $stmt->execute();
     $stmt->close();
+}
+
+/**
+ * Calculate how many consecutive days the user has answered questions.
+ */
+function get_user_streak($userId)
+{
+    global $conn;
+    $sql = "SELECT DATE(created_at) AS day FROM question_attempts WHERE user_id = ? GROUP BY day ORDER BY day DESC";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log('get_user_streak prepare failed: ' . $conn->error);
+        return 0;
+    }
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $days = [];
+    while ($row = $result->fetch_assoc()) {
+        $days[] = $row['day'];
+    }
+    $stmt->close();
+
+    $streak = 0;
+    $expected = date('Y-m-d');
+    foreach ($days as $day) {
+        if ($day === $expected) {
+            $streak++;
+            $expected = date('Y-m-d', strtotime($expected . ' -1 day'));
+        } else {
+            break;
+        }
+    }
+    return $streak;
 }
 
 /**
@@ -72,17 +101,8 @@ function get_dashboard($userId)
         $stmt->close();
     }
 
-    // Current streak
-    $stmt = $conn->prepare('SELECT current_streak FROM user_streaks WHERE user_id = ?');
-    if ($stmt) {
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        if ($row) {
-            $data['streak'] = (int) $row['current_streak'];
-        }
-        $stmt->close();
-    }
+    // Current streak based on consecutive active days
+    $data['streak'] = get_user_streak($userId);
 
     // Accuracy by topic
     $sql = 'SELECT topic_id, AVG(correct) AS accuracy FROM question_attempts WHERE user_id = ? GROUP BY topic_id';
@@ -97,11 +117,22 @@ function get_dashboard($userId)
         $stmt->close();
     }
 
-    // Last 10 attempts
-    $sql = 'SELECT question_id, correct, created_at FROM question_attempts WHERE user_id = ? ORDER BY created_at DESC LIMIT 10';
+    // Last 10 attempts per question with question text and timestamp
+    $sql = 'SELECT qa.question_id, q.question_text, qa.correct, qa.created_at
+            FROM question_attempts qa
+            JOIN (
+                SELECT question_id, MAX(created_at) AS last_attempt
+                FROM question_attempts
+                WHERE user_id = ?
+                GROUP BY question_id
+            ) r ON qa.question_id = r.question_id AND qa.created_at = r.last_attempt
+            JOIN questions q ON qa.question_id = q.id
+            WHERE qa.user_id = ?
+            ORDER BY qa.created_at DESC
+            LIMIT 10';
     $stmt = $conn->prepare($sql);
     if ($stmt) {
-        $stmt->bind_param('i', $userId);
+        $stmt->bind_param('ii', $userId, $userId);
         $stmt->execute();
         $result = $stmt->get_result();
         $data['recent'] = $result->fetch_all(MYSQLI_ASSOC);
@@ -109,5 +140,31 @@ function get_dashboard($userId)
     }
 
     return $data;
+}
+
+/**
+ * Return how many unique questions the user has answered versus total available.
+ */
+function get_progress_summary($userId)
+{
+    global $conn;
+    $summary = ['answered' => 0, 'total' => 0];
+
+    $res = $conn->query('SELECT COUNT(*) AS total FROM questions');
+    if ($res) {
+        $row = $res->fetch_assoc();
+        $summary['total'] = (int) $row['total'];
+    }
+
+    $stmt = $conn->prepare('SELECT COUNT(DISTINCT question_id) AS answered FROM question_attempts WHERE user_id = ?');
+    if ($stmt) {
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $summary['answered'] = (int) $row['answered'];
+        $stmt->close();
+    }
+
+    return $summary;
 }
 ?>
