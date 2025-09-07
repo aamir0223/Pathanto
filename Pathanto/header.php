@@ -171,3 +171,6 @@
              <button class="dropbtn" onclick="location.href='https://pathanto.com/blogs';">Blogs</button>
              </div>
         </li>
+      </ul>
+    </nav>
+  </section>
