@@ -87,4 +87,21 @@ function require_login()
         exit;
     }
 }
+
+/**
+ * Fetch a user's display name by id.
+ */
+function get_user_name($userId)
+{
+    global $conn;
+    $stmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
+    if (!$stmt) {
+        return null;
+    }
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ? $row['name'] : null;
+}
 ?>
