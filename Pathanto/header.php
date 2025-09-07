@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="/Pathanto/public/css/common.css">
    <link rel="stylesheet" href="/Pathanto/public/css/quize.css">
    <link rel="stylesheet" href="/Pathanto/public/css/question.css">
+  <link rel="stylesheet" href="/Pathanto/public/css/auth.css">
   
  
 
