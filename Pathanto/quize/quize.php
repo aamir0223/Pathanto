@@ -1,13 +1,45 @@
 <?php
-require_once "./../config.php";
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../gamification.php';
+require_once __DIR__ . '/../progress.php';
+
+$userId = current_user_id();
+$timezone = $_POST['timezone'] ?? 'UTC';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId) {
+    if (isset($_POST['questionId'])) {
+        $questionId = (int) $_POST['questionId'];
+        $isCorrect  = !empty($_POST['isCorrect']);
+        $topicId    = isset($_POST['topicId']) ? (int) $_POST['topicId'] : null;
+        $difficulty = $_POST['difficulty'] ?? null;
+        $timeTaken  = isset($_POST['timeTaken']) ? (int) $_POST['timeTaken'] : null;
+
+        record_attempt($userId, $questionId, $isCorrect, $topicId, $difficulty, $timeTaken);
+        if ($isCorrect) {
+            add_points($userId, POINTS_CORRECT_ANSWER, 'correct answer');
+        }
+        exit;
+    }
+
+    if (isset($_POST['complete'])) {
+        add_points($userId, POINTS_QUIZ_COMPLETION, 'quiz completion');
+        update_streak($userId, $timezone);
+        header('Location: /Pathanto/dashboard.php');
+        exit;
+    }
+}
 
 // Fetch quizzes based on the selected class and chapter from the database
 $class = isset($_GET['class']) ? $_GET['class'] : '';
 $chapter = isset($_GET['chapter']) ? $_GET['chapter'] : '';
 $chapter_name = isset($_GET['chapter']) ? $_GET['chapter_name'] : '';
 $subject = isset($_GET['subject']) ? $_GET['subject'] : '';
-$classes = array();
-$chapters = array();
+$quizData = [];
+$loginPrompt = false;
+$totalQuestions = 0;
+$classes = [];
+$chapters = [];
 if (!empty($class) && is_numeric($chapter)) {
     $sql = "SELECT * FROM quiz_table WHERE class = ? AND chapter = ?";
     $stmt = $conn->prepare($sql);
@@ -16,27 +48,33 @@ if (!empty($class) && is_numeric($chapter)) {
     $result = $stmt->get_result();
 
     // Store quiz data in an array
-    $quizData = array();
     while ($row = $result->fetch_assoc()) {
         $quizData[] = $row;
     }
-    
+
     $stmt->close();
-    
+
+    $totalQuestions = count($quizData);
+    $previewLimit = 3;
+    if (!$userId && $totalQuestions > $previewLimit) {
+        $quizData   = array_slice($quizData, 0, $previewLimit);
+        $loginPrompt = true;
+    }
+
     // Fetch subject, class, and chapters from the URL parameters
 
 
 
-// Fetch all classes and chapters for the specified subject and class from the database
-$sql = "SELECT DISTINCT class, chapter, chapter_name FROM quiz_table WHERE subject = '$subject' AND class = '$class'";
-$result = $conn->query($sql);
+    // Fetch all classes and chapters for the specified subject and class from the database
+    $sql = "SELECT DISTINCT class, chapter, chapter_name FROM quiz_table WHERE subject = '$subject' AND class = '$class'";
+    $result = $conn->query($sql);
 
-// Store classes and chapters in arrays
+    // Store classes and chapters in arrays
 
-while ($row = $result->fetch_assoc()) {
-    $classes[$row['class']][] = array('chapter' => $row['chapter'], 'chapter_name' => $row['chapter_name']);
-    $chapters[$row['chapter']] = true; // Using an associative array to ensure unique chapters
-}
+    while ($row = $result->fetch_assoc()) {
+        $classes[$row['class']][] = array('chapter' => $row['chapter'], 'chapter_name' => $row['chapter_name']);
+        $chapters[$row['chapter']] = true; // Using an associative array to ensure unique chapters
+    }
 
 }
 // Close the database connection
@@ -124,6 +162,10 @@ $descriptionTitle = $chapterInfo['description_title'];
     
 </div>
 
+<?php if ($loginPrompt): ?>
+<p class="login-notice">Showing first few questions. <a href="/Pathanto/login.php">Log in</a> for full access.</p>
+<?php endif; ?>
+
 <script>
     let currentQuestion = 0;
 
@@ -205,14 +247,29 @@ $descriptionTitle = $chapterInfo['description_title'];
         }
     }
 
+    const isLoggedIn = <?php echo $userId ? 'true' : 'false'; ?>;
+
     $(document).ready(function () {
         showQuestion(currentQuestion);
-         $('#prevBtn1').hide();
+        $('#prevBtn1').hide();
         $('#nextBtn1').hide();
-          $('#downloadAllBtn').hide();
-        
-        
+        $('#downloadAllBtn').hide();
     });
+
+    function logAttempt(questionId, correct) {
+        if (!isLoggedIn) return;
+        fetch('quize.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                questionId: questionId,
+                isCorrect: correct ? 1 : 0,
+                topicId: 0,
+                difficulty: '',
+                timeTaken: 0
+            })
+        });
+    }
 
     function submitQuiz() {
         let score = 0;
@@ -224,12 +281,12 @@ $descriptionTitle = $chapterInfo['description_title'];
         <?php foreach ($quizData as $questionData): ?>
             const selectedOption<?php echo $questionData['question_number']; ?> = $('input[name="question<?php echo $questionData['quiz_number']; ?>"]:checked').val();
             const correctOption<?php echo $questionData['question_number']; ?> = '<?php echo $questionData['correct_answer']; ?>';
-
-            // Check if an option is selected and compare with the correct option
-            if (
+            const isCorrect<?php echo $questionData['question_number']; ?> =
                 selectedOption<?php echo $questionData['question_number']; ?> !== undefined &&
-                selectedOption<?php echo $questionData['question_number']; ?> === correctOption<?php echo $questionData['question_number']; ?>
-            ) {
+                selectedOption<?php echo $questionData['question_number']; ?> === correctOption<?php echo $questionData['question_number']; ?>;
+            logAttempt('<?php echo $questionData['quiz_number']; ?>', isCorrect<?php echo $questionData['question_number']; ?>);
+
+            if (isCorrect<?php echo $questionData['question_number']; ?>) {
                 score++;
                 indicateAnsweredQuestion(<?php echo $questionData['question_number']; ?>);
             } else {
@@ -253,9 +310,24 @@ $descriptionTitle = $chapterInfo['description_title'];
             $('.mcq-question').hide();
         $('.options').hide();
         $('#downloadAllBtn').show();
-       
-        
+
+
         console.log("$quizData",<?php echo json_encode($quizData); ?>)
+
+        if (isLoggedIn) {
+            fetch('quize.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    complete: 1,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                })
+            }).then(() => {
+                window.location.href = '/Pathanto/dashboard.php';
+            });
+        } else {
+            resultElement.append('<p><a href="/Pathanto/login.php">Log in</a> to unlock more questions and track your score.</p>');
+        }
     }
 
 function retryQuiz() {
@@ -495,9 +567,10 @@ function downloadAllQuestions() {
             <button id="nextBtn" onclick="nextQuestion()">Next</button>
            
             <button id="submitBtn" style="display: none;" onclick="submitQuiz()">Submit</button>
-            
-            
-            
+            <?php if ($loginPrompt): ?>
+            <p class="login-notice">Log in to access all <?php echo $totalQuestions; ?> questions and save your progress. <a href="/Pathanto/login.php">Login</a></p>
+            <?php endif; ?>
+
             <div id="result" style="display: none;"></div>
             
             <div class="quize-button">
