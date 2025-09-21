@@ -39,6 +39,31 @@ if (!$conn->query($createFeed)) {
     error_log('Failed creating question_feed table: ' . $conn->error);
 }
 
+$createReactions = "CREATE TABLE IF NOT EXISTS question_feed_reactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    feed_id INT NOT NULL,
+    user_id INT NOT NULL,
+    reaction TINYINT(1) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_feed_user (feed_id, user_id),
+    INDEX idx_reaction_feed (feed_id)
+)";
+if (!$conn->query($createReactions)) {
+    error_log('Failed creating question_feed_reactions table: ' . $conn->error);
+}
+
+$createComments = "CREATE TABLE IF NOT EXISTS question_feed_comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    feed_id INT NOT NULL,
+    user_id INT NOT NULL,
+    comment_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_comment_feed (feed_id)
+)";
+if (!$conn->query($createComments)) {
+    error_log('Failed creating question_feed_comments table: ' . $conn->error);
+}
+
 /**
  * Record a user's attempt at a question.
  */
@@ -62,24 +87,137 @@ function publish_attempt($userId, $questionId, $correct, $note = null)
     $stmt = $conn->prepare('INSERT INTO question_feed (user_id, question_id, correct, note) VALUES (?, ?, ?, ?)');
     if (!$stmt) {
         error_log('publish_attempt prepare failed: ' . $conn->error);
-        return;
+        return false;
     }
     $c = $correct ? 1 : 0;
     $noteParam = $note !== null ? $note : '';
     $stmt->bind_param('iiis', $userId, $questionId, $c, $noteParam);
-    $stmt->execute();
+    $ok = $stmt->execute();
+    if (!$ok) {
+        error_log('publish_attempt execute failed: ' . $stmt->error);
+    }
     $stmt->close();
+    return $ok;
 }
 
-function get_public_feed($limit = 10)
+function build_feed_payload(array $rows, $currentUserId = null)
 {
     global $conn;
-    $sql = 'SELECT f.id, f.question_id, f.correct, f.note, f.created_at, q.question_text, u.name
+    if (!$rows) {
+        return [];
+    }
+
+    $feed = [];
+    foreach ($rows as $row) {
+        $feedId = (int) $row['id'];
+        $questionText = $row['question_text'] !== null ? trim(strip_tags(htmlspecialchars_decode($row['question_text']))) : ('Question #' . (int) $row['question_id']);
+        $answerText = $row['answer_text'] !== null ? trim(strip_tags(htmlspecialchars_decode($row['answer_text']))) : '';
+        $feed[$feedId] = [
+            'id' => $feedId,
+            'question_id' => (int) $row['question_id'],
+            'question_text' => $questionText,
+            'answer_text' => $answerText,
+            'user' => $row['name'],
+            'correct' => (bool) $row['correct'],
+            'note' => $row['note'] !== null ? trim($row['note']) : '',
+            'created_at' => $row['created_at'],
+            'likes' => 0,
+            'dislikes' => 0,
+            'user_reaction' => null,
+            'comments' => [],
+        ];
+    }
+
+    $feedIds = array_keys($feed);
+    if (!empty($feedIds)) {
+        $idList = implode(',', array_map('intval', $feedIds));
+
+        $reactionResult = $conn->query("SELECT feed_id, reaction, COUNT(*) AS total FROM question_feed_reactions WHERE feed_id IN ($idList) GROUP BY feed_id, reaction");
+        if ($reactionResult instanceof mysqli_result) {
+            while ($reactionRow = $reactionResult->fetch_assoc()) {
+                $feedId = (int) $reactionRow['feed_id'];
+                if (!isset($feed[$feedId])) {
+                    continue;
+                }
+                if ((int) $reactionRow['reaction'] === 1) {
+                    $feed[$feedId]['likes'] = (int) $reactionRow['total'];
+                } else {
+                    $feed[$feedId]['dislikes'] = (int) $reactionRow['total'];
+                }
+            }
+            $reactionResult->close();
+        }
+
+        if ($currentUserId) {
+            $userReactionResult = $conn->query("SELECT feed_id, reaction FROM question_feed_reactions WHERE feed_id IN ($idList) AND user_id = " . (int) $currentUserId);
+            if ($userReactionResult instanceof mysqli_result) {
+                while ($userReactionRow = $userReactionResult->fetch_assoc()) {
+                    $feedId = (int) $userReactionRow['feed_id'];
+                    if (!isset($feed[$feedId])) {
+                        continue;
+                    }
+                    $feed[$feedId]['user_reaction'] = ((int) $userReactionRow['reaction'] === 1) ? 'like' : 'dislike';
+                }
+                $userReactionResult->close();
+            }
+        }
+
+        $commentsResult = $conn->query("SELECT c.feed_id, c.comment_text, c.created_at, u.name FROM question_feed_comments c JOIN users u ON c.user_id = u.id WHERE c.feed_id IN ($idList) ORDER BY c.created_at ASC");
+        if ($commentsResult instanceof mysqli_result) {
+            while ($commentRow = $commentsResult->fetch_assoc()) {
+                $feedId = (int) $commentRow['feed_id'];
+                if (!isset($feed[$feedId])) {
+                    continue;
+                }
+                $feed[$feedId]['comments'][] = [
+                    'user' => $commentRow['name'],
+                    'comment_text' => trim($commentRow['comment_text']),
+                    'created_at' => $commentRow['created_at'],
+                ];
+            }
+            $commentsResult->close();
+        }
+    }
+
+    $ordered = [];
+    foreach ($rows as $row) {
+        $feedId = (int) $row['id'];
+        if (isset($feed[$feedId])) {
+            $ordered[] = $feed[$feedId];
+        }
+    }
+
+    return $ordered;
+}
+
+function get_public_feed($limit = 10, $currentUserId = null)
+{
+    global $conn;
+
+    static $hasAnswersTable = null;
+    if ($hasAnswersTable === null) {
+        $check = $conn->query("SHOW TABLES LIKE 'answers'");
+        $hasAnswersTable = $check && $check->num_rows > 0;
+        if ($check instanceof mysqli_result) {
+            $check->close();
+        }
+    }
+
+    $answerSelect = $hasAnswersTable ? '(SELECT answer_text FROM answers WHERE question_id = f.question_id LIMIT 1)' : 'NULL';
+
+    $sql = "SELECT f.id,
+                   f.question_id,
+                   f.correct,
+                   f.note,
+                   f.created_at,
+                   COALESCE(q.question_text, CONCAT('Question #', f.question_id)) AS question_text,
+                   $answerSelect AS answer_text,
+                   u.name
             FROM question_feed f
-            JOIN questions q ON f.question_id = q.id
+            LEFT JOIN questions q ON f.question_id = q.id
             JOIN users u ON f.user_id = u.id
             ORDER BY f.created_at DESC
-            LIMIT ?';
+            LIMIT ?";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         error_log('get_public_feed prepare failed: ' . $conn->error);
@@ -89,7 +227,50 @@ function get_public_feed($limit = 10)
     $stmt->execute();
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
-    return $rows;
+
+    return build_feed_payload($rows, $currentUserId);
+}
+
+function get_feed_entry($feedId, $currentUserId = null)
+{
+    global $conn;
+
+    static $hasAnswersTable = null;
+    if ($hasAnswersTable === null) {
+        $check = $conn->query("SHOW TABLES LIKE 'answers'");
+        $hasAnswersTable = $check && $check->num_rows > 0;
+        if ($check instanceof mysqli_result) {
+            $check->close();
+        }
+    }
+
+    $answerSelect = $hasAnswersTable ? '(SELECT answer_text FROM answers WHERE question_id = f.question_id LIMIT 1)' : 'NULL';
+
+    $sql = "SELECT f.id,
+                   f.question_id,
+                   f.correct,
+                   f.note,
+                   f.created_at,
+                   COALESCE(q.question_text, CONCAT('Question #', f.question_id)) AS question_text,
+                   $answerSelect AS answer_text,
+                   u.name
+            FROM question_feed f
+            LEFT JOIN questions q ON f.question_id = q.id
+            JOIN users u ON f.user_id = u.id
+            WHERE f.id = ?
+            LIMIT 1";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log('get_feed_entry prepare failed: ' . $conn->error);
+        return null;
+    }
+    $stmt->bind_param('i', $feedId);
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    $payload = build_feed_payload($rows, $currentUserId);
+    return $payload[0] ?? null;
 }
 
 /**
@@ -154,14 +335,25 @@ function get_dashboard($userId)
     $data['streak'] = get_user_streak($userId);
 
     // Accuracy by topic
-    $sql = 'SELECT topic_id, AVG(correct) AS accuracy FROM question_attempts WHERE user_id = ? GROUP BY topic_id';
+    $sql = 'SELECT topic_id,
+                   SUM(correct) AS correct_total,
+                   COUNT(*) AS attempt_total,
+                   AVG(correct) AS accuracy
+            FROM question_attempts
+            WHERE user_id = ?
+            GROUP BY topic_id';
     $stmt = $conn->prepare($sql);
     if ($stmt) {
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
-            $data['topics'][$row['topic_id']] = (float) $row['accuracy'];
+            $topicKey = $row['topic_id'];
+            $data['topics'][$topicKey] = [
+                'accuracy' => (float) $row['accuracy'],
+                'correct' => (int) $row['correct_total'],
+                'attempts' => (int) $row['attempt_total'],
+            ];
         }
         $stmt->close();
     }

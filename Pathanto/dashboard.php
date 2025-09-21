@@ -32,10 +32,18 @@ $dashboard    = get_dashboard($userId);
 $summary      = get_progress_summary($userId);
 $dailyGoal    = get_daily_goal($userId);
 $recommended  = recommend_questions($userId, 5, $filters);
+$recommendationFallback = false;
+if (empty($recommended)) {
+    $recommended = get_default_questions(5);
+    $recommendationFallback = !empty($recommended);
+}
 $leaders      = get_leaderboard('all', 5);
 $totalQuestions = (int) ($summary['total'] ?? 0);
 $answeredQuestions = (int) ($summary['answered'] ?? 0);
-$percent = $totalQuestions > 0 ? round($answeredQuestions / $totalQuestions * 100, 1) : 0;
+$rawPercent = $totalQuestions > 0 ? ($answeredQuestions / $totalQuestions) * 100 : 0;
+$percent = round(min(100, $rawPercent), 1);
+$displayAnswered = min($answeredQuestions, $totalQuestions);
+$extraAnswered = max(0, $answeredQuestions - $totalQuestions);
 $streakDays = (int) ($dashboard['streak'] ?? 0);
 $pointsTotal = (int) ($dashboard['points'] ?? 0);
 $publicFeed = get_public_feed(6);
@@ -68,6 +76,9 @@ include __DIR__ . '/header.php';
                     aria-valuemax="100" aria-valuenow="<?php echo $percent; ?>">
                     <span class="metric-card__progress-fill" style="width: <?php echo $percent; ?>%"></span>
                 </div>
+                <p class="metric-card__context">
+                    <?php echo $displayAnswered; ?> of <?php echo $totalQuestions; ?> unique questions answered<?php if ($extraAnswered > 0) { echo ' <span class="metric-card__context-extra">(+' . $extraAnswered . ' beyond the tracked set)</span>'; } ?>
+                </p>
             </div>
         </div>
     </section>
@@ -95,6 +106,9 @@ include __DIR__ . '/header.php';
                     <p class="dashboard-card__meta">Curated practice picked from your recent activity.</p>
                 </header>
                 <?php if (!empty($recommended)): ?>
+                <?php if ($recommendationFallback): ?>
+                <p class="dashboard-card__meta" style="color:#6366f1;">Here are a few fresh questions to get you started.</p>
+                <?php endif; ?>
                 <ul class="dashboard-list dashboard-list--questions">
                     <?php foreach ($recommended as $question):
                         $slug = dashboard_slugify($question['question_text']);
@@ -105,7 +119,7 @@ include __DIR__ . '/header.php';
                         data-question-solution="<?php echo htmlspecialchars($solutionUrl, ENT_QUOTES); ?>">
                         <div class="dashboard-question__header">
                             <span class="dashboard-question__text"><?php echo htmlspecialchars($question['question_text']); ?></span>
-                            <button type="button" class="dashboard-question__toggle" data-dashboard-question-toggle>Answer</button>
+                            <button type="button" class="dashboard-question__toggle" data-dashboard-question-open>Answer</button>
                         </div>
                         <?php
                             $topicId = $question['topic_id'] ?? null;
@@ -148,31 +162,47 @@ include __DIR__ . '/header.php';
                             </ul>
                         </div>
                         <?php endif; ?>
-                        <form class="dashboard-question__form" data-dashboard-question-form hidden>
-                            <fieldset class="dashboard-question__choices">
-                                <legend class="sr-only">How did you do?</legend>
-                                <label class="dashboard-question__choice">
-                                    <input type="radio" name="result-<?php echo (int) $question['id']; ?>" value="correct" required>
-                                    <span>I answered correctly</span>
-                                </label>
-                                <label class="dashboard-question__choice">
-                                    <input type="radio" name="result-<?php echo (int) $question['id']; ?>" value="incorrect" required>
-                                    <span>I need more practice</span>
-                                </label>
-                            </fieldset>
-                            <label class="dashboard-question__share">
-                                <input type="checkbox" name="share" value="1" checked>
-                                <span>Share this attempt with the community feed</span>
-                            </label>
-                            <textarea class="dashboard-question__note" name="note" maxlength="400"
-                                placeholder="Add a short explanation (optional)"></textarea>
-                            <div class="dashboard-question__actions">
-                                <button type="submit" class="dashboard-form__button">Submit answer</button>
-                                <a class="dashboard-question__link" href="<?php echo htmlspecialchars($solutionUrl); ?>"
-                                    target="_blank" rel="noopener">View solution</a>
+                        <div class="dashboard-question__modal" data-dashboard-question-modal hidden>
+                            <div class="dashboard-modal__backdrop" data-dashboard-question-close></div>
+                            <div class="dashboard-modal" role="dialog" aria-modal="true"
+                                aria-labelledby="question-modal-title-<?php echo (int) $question['id']; ?>">
+                                <button type="button" class="dashboard-modal__close" data-dashboard-question-close
+                                    aria-label="Close">
+                                    &times;
+                                </button>
+                                <header class="dashboard-modal__header">
+                                    <h3 class="dashboard-modal__title" id="question-modal-title-<?php echo (int) $question['id']; ?>">
+                                        Log your attempt
+                                    </h3>
+                                    <p class="dashboard-modal__question"><?php echo htmlspecialchars($question['question_text']); ?></p>
+                                </header>
+                                <form class="dashboard-question__form" data-dashboard-question-form>
+                                    <textarea class="dashboard-question__note" name="note" maxlength="400"
+                                        placeholder="Add a short explanation (optional)"></textarea>
+                                    <fieldset class="dashboard-question__choices">
+                                        <legend class="sr-only">How did you do?</legend>
+                                        <label class="dashboard-question__choice">
+                                            <input type="radio" name="result-<?php echo (int) $question['id']; ?>" value="correct" required>
+                                            <span>I answered correctly</span>
+                                        </label>
+                                        <label class="dashboard-question__choice">
+                                            <input type="radio" name="result-<?php echo (int) $question['id']; ?>" value="incorrect" required>
+                                            <span>I need more practice</span>
+                                        </label>
+                                    </fieldset>
+                                    <label class="dashboard-question__share">
+                                        <input type="checkbox" name="share" value="1" checked>
+                                        <span>Share this attempt with the community feed</span>
+                                    </label>
+                                    <div class="dashboard-question__actions">
+                                        <button type="submit" class="dashboard-form__button">Submit answer</button>
+                                        <a class="dashboard-question__link" href="<?php echo htmlspecialchars($solutionUrl); ?>"
+                                            target="_blank" rel="noopener">View solution</a>
+                                    </div>
+                                    <p class="dashboard-question__status" data-dashboard-question-status hidden></p>
+                                </form>
                             </div>
-                            <p class="dashboard-question__status" data-dashboard-question-status hidden></p>
-                        </form>
+                        </div>
                     </li>
                     <?php endforeach; ?>
                 </ul>
@@ -213,8 +243,11 @@ include __DIR__ . '/header.php';
                 </header>
                 <?php if (!empty($dashboard['topics'])): ?>
                 <ul class="dashboard-list dashboard-list--topics">
-                    <?php foreach ($dashboard['topics'] as $topic => $acc):
-                        $topicPercent = max(0, min(100, round($acc * 100, 1)));
+                    <?php foreach ($dashboard['topics'] as $topic => $topicData):
+                        $topicAccuracy = is_array($topicData) ? (float) ($topicData['accuracy'] ?? 0) : (float) $topicData;
+                        $topicPercent = max(0, min(100, round($topicAccuracy * 100, 1)));
+                        $topicCorrect = is_array($topicData) ? (int) ($topicData['correct'] ?? 0) : null;
+                        $topicAttempts = is_array($topicData) ? (int) ($topicData['attempts'] ?? 0) : null;
                         $topicLabel = $topicLabelMap[(string) $topic] ?? (is_numeric($topic) ? 'Topic ' . $topic : (string) $topic);
                     ?>
                     <li class="dashboard-list__item">
@@ -224,6 +257,9 @@ include __DIR__ . '/header.php';
                                 aria-valuenow="<?php echo $topicPercent; ?>">
                                 <span class="topic-accuracy__fill" style="width: <?php echo $topicPercent; ?>%"></span>
                             </div>
+                            <?php if ($topicAttempts): ?>
+                            <p class="topic-accuracy__stats"><?php echo $topicCorrect; ?> of <?php echo $topicAttempts; ?> correct</p>
+                            <?php endif; ?>
                         </div>
                         <span class="topic-accuracy__value"><?php echo $topicPercent; ?>%</span>
                     </li>
@@ -247,16 +283,51 @@ include __DIR__ . '/header.php';
                         $timeObj = new DateTime($item['created_at']);
                         $displayTime = $timeObj->format('M j, g:i a');
                         $isoTime = $timeObj->format(DateTime::ATOM);
+                        $answerText = $item['answer_text'] ?? '';
+                        $likes = (int) ($item['likes'] ?? 0);
+                        $dislikes = (int) ($item['dislikes'] ?? 0);
+                        $userReaction = $item['user_reaction'] ?? null;
+                        $comments = $item['comments'] ?? [];
                     ?>
-                    <li class="dashboard-feed__item <?php echo $statusClass; ?>">
+                    <li class="dashboard-feed__item <?php echo $statusClass; ?>" data-feed-item data-feed-id="<?php echo (int) $item['id']; ?>">
                         <div class="dashboard-feed__header">
-                            <span class="dashboard-feed__user"><?php echo htmlspecialchars($item['name']); ?></span>
+                            <span class="dashboard-feed__user"><?php echo htmlspecialchars($item['user']); ?></span>
                             <span class="dashboard-feed__status"><?php echo $statusLabel; ?></span>
                         </div>
                         <p class="dashboard-feed__question"><?php echo htmlspecialchars($item['question_text']); ?></p>
+                        <p class="dashboard-feed__question-id">Question #<?php echo (int) $item['question_id']; ?></p>
+                        <?php if ($answerText !== ''): ?>
+                        <p class="dashboard-feed__answer-label">Answer</p>
+                        <p class="dashboard-feed__answer"><?php echo nl2br(htmlspecialchars($answerText)); ?></p>
+                        <?php endif; ?>
                         <?php if (!empty($item['note'])): ?>
                         <p class="dashboard-feed__note"><?php echo nl2br(htmlspecialchars($item['note'])); ?></p>
                         <?php endif; ?>
+                        <div class="dashboard-feed__reactions">
+                            <button type="button" class="dashboard-feed__reaction<?php echo $userReaction === 'like' ? ' is-active' : ''; ?>" data-feed-react data-reaction="like">
+                                👍 <span><?php echo $likes; ?></span>
+                            </button>
+                            <button type="button" class="dashboard-feed__reaction<?php echo $userReaction === 'dislike' ? ' is-active' : ''; ?>" data-feed-react data-reaction="dislike">
+                                👎 <span><?php echo $dislikes; ?></span>
+                            </button>
+                        </div>
+                        <div class="dashboard-feed__comments">
+                            <ul class="dashboard-feed__comments-list">
+                                <?php foreach ($comments as $comment):
+                                    $commentTime = new DateTime($comment['created_at']);
+                                ?>
+                                <li class="dashboard-feed__comment">
+                                    <span class="dashboard-feed__comment-user"><?php echo htmlspecialchars($comment['user']); ?></span>
+                                    <span class="dashboard-feed__comment-text"><?php echo nl2br(htmlspecialchars($comment['comment_text'])); ?></span>
+                                    <time class="dashboard-feed__comment-time" datetime="<?php echo $commentTime->format(DateTime::ATOM); ?>"><?php echo $commentTime->format('M j, g:i a'); ?></time>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <form class="dashboard-feed__comment-form" data-feed-comment-form>
+                                <input type="text" name="comment" maxlength="400" class="dashboard-feed__comment-input" placeholder="Add a comment...">
+                                <button type="submit" class="dashboard-feed__comment-submit">Post</button>
+                            </form>
+                        </div>
                         <time class="dashboard-feed__time" datetime="<?php echo $isoTime; ?>"><?php echo $displayTime; ?></time>
                     </li>
                     <?php endforeach; ?>
@@ -357,22 +428,50 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    document.querySelectorAll('[data-dashboard-question-toggle]').forEach((button) => {
+    const body = document.body;
+
+    const closeModal = (modal) => {
+        if (!modal) {
+            return;
+        }
+        modal.setAttribute('hidden', '');
+        modal.classList.remove('is-visible');
+        if (!document.querySelector('[data-dashboard-question-modal]:not([hidden])')) {
+            body.classList.remove('dashboard-has-open-modal');
+        }
+    };
+
+    document.querySelectorAll('[data-dashboard-question-open]').forEach((button) => {
         button.addEventListener('click', () => {
             const container = button.closest('.dashboard-question');
-            const form = container.querySelector('[data-dashboard-question-form]');
-            if (!form) {
+            const modal = container.querySelector('[data-dashboard-question-modal]');
+            if (!modal) {
                 return;
             }
-            const isHidden = form.hasAttribute('hidden');
-            if (isHidden) {
-                form.removeAttribute('hidden');
-                button.textContent = 'Hide';
-            } else {
-                form.setAttribute('hidden', '');
-                button.textContent = 'Answer';
+            modal.removeAttribute('hidden');
+            modal.classList.add('is-visible');
+            body.classList.add('dashboard-has-open-modal');
+            const firstField = modal.querySelector('input[type="radio"]');
+            if (firstField) {
+                firstField.focus();
             }
         });
+    });
+
+    document.querySelectorAll('[data-dashboard-question-close]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const modal = button.closest('[data-dashboard-question-modal]');
+            closeModal(modal);
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            const openModal = document.querySelector('[data-dashboard-question-modal]:not([hidden])');
+            if (openModal) {
+                closeModal(openModal);
+            }
+        }
     });
 
     document.querySelectorAll('[data-dashboard-question-form]').forEach((form) => {
@@ -381,7 +480,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const container = form.closest('.dashboard-question');
             const questionId = container.dataset.questionId;
             const status = form.querySelector('[data-dashboard-question-status]');
-            const toggle = container.querySelector('[data-dashboard-question-toggle]');
+            const modal = form.closest('[data-dashboard-question-modal]');
+            const openButton = container.querySelector('[data-dashboard-question-open]');
             const submitButton = form.querySelector('button[type="submit"]');
             const radio = form.querySelector('input[type="radio"]:checked');
             const shareInput = form.querySelector('input[name="share"]');
@@ -437,14 +537,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
                 form.classList.add('is-complete');
                 container.classList.add('dashboard-question--completed');
-                if (toggle) {
-                    toggle.textContent = 'Completed';
-                    toggle.disabled = true;
+                if (openButton) {
+                    openButton.textContent = 'Completed';
+                    openButton.disabled = true;
                 }
                 if (noteField) {
                     noteField.value = '';
                 }
-                form.setAttribute('hidden', '');
 
                 if (payload.feed) {
                     renderFeed(payload.feed);
@@ -457,8 +556,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } finally {
                 if (submitButton) {
-                    submitButton.disabled = false;
                     submitButton.textContent = submitButton.dataset.originalText || 'Submit answer';
+                    submitButton.disabled = form.classList.contains('is-complete');
                 }
             }
         });

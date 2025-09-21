@@ -2,6 +2,7 @@
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/gamification.php';
 require_once __DIR__ . '/progress.php';
+require_once __DIR__ . '/personalization.php';
 
 header('Content-Type: application/json');
 
@@ -47,10 +48,12 @@ if ($isCorrect) {
 if ($shareFlag) {
     $trimmer = function_exists('mb_substr') ? 'mb_substr' : 'substr';
     $trimmedNote = $note !== '' ? $trimmer($note, 0, 400) : '';
-    publish_attempt($userId, $questionId, $isCorrect, $trimmedNote);
+    if (!publish_attempt($userId, $questionId, $isCorrect, $trimmedNote)) {
+        error_log('dashboard_action: failed to publish attempt for question ' . $questionId . ' by user ' . $userId);
+    }
 }
 
-$feed = get_public_feed(6);
+$feed = get_public_feed(6, $userId);
 
 echo json_encode([
     'success' => true,
@@ -70,7 +73,25 @@ exit;
 function fetch_question_meta(int $questionId): ?array
 {
     global $conn;
-    $stmt = $conn->prepare('SELECT id, topic_id, difficulty FROM questions WHERE id = ?');
+
+    $meta = get_question_table_metadata();
+    $topicColumn = $meta['topic_column'];
+    $difficultyColumn = $meta['difficulty_column'];
+
+    $selects = ['id'];
+    if ($topicColumn) {
+        $selects[] = $topicColumn . ' AS topic_id';
+    } else {
+        $selects[] = 'NULL AS topic_id';
+    }
+    if ($difficultyColumn) {
+        $selects[] = $difficultyColumn . ' AS difficulty';
+    } else {
+        $selects[] = 'NULL AS difficulty';
+    }
+
+    $sql = 'SELECT ' . implode(', ', $selects) . ' FROM questions WHERE id = ? LIMIT 1';
+    $stmt = $conn->prepare($sql);
     if (!$stmt) {
         error_log('fetch_question_meta prepare failed: ' . $conn->error);
         return null;
