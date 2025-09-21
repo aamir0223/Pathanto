@@ -22,11 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['daily_goal'])) {
     set_daily_goal($userId, $goal);
 }
 
-$selectedTopic = isset($_GET['topic']) && $_GET['topic'] !== '' ? (int) $_GET['topic'] : null;
-$selectedDifficulty = isset($_GET['difficulty']) && $_GET['difficulty'] !== '' ? $_GET['difficulty'] : null;
-$filters      = ['topic' => $selectedTopic, 'difficulty' => $selectedDifficulty];
+$filters      = [];
 $topicOptions = get_topic_options();
-$difficultyOptions = get_difficulty_options();
 $topicLabelMap = [];
 foreach ($topicOptions as $topicOption) {
     $topicLabelMap[(string) $topicOption['id']] = $topicOption['label'];
@@ -95,39 +92,8 @@ include __DIR__ . '/header.php';
             <article class="dashboard-card">
                 <header class="dashboard-card__header">
                     <h2 class="dashboard-card__title">Recommended questions</h2>
-                    <p class="dashboard-card__meta">Fine-tune suggestions by topic or difficulty.</p>
+                    <p class="dashboard-card__meta">Curated practice picked from your recent activity.</p>
                 </header>
-                <form method="get" class="dashboard-form dashboard-form--filters">
-                    <div class="dashboard-form__group">
-                        <label class="dashboard-form__label" for="filter_topic">Topic</label>
-                        <select class="dashboard-form__input" name="topic" id="filter_topic">
-                            <option value="">All topics</option>
-                            <?php foreach ($topicOptions as $topic):
-                                $value = $topic['id'];
-                                $isSelected = $selectedTopic !== null && (string) $selectedTopic === (string) $value;
-                            ?>
-                            <option value="<?php echo htmlspecialchars($value); ?>" <?php echo $isSelected ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($topic['label']); ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="dashboard-form__group">
-                        <label class="dashboard-form__label" for="filter_difficulty">Medium</label>
-                        <select class="dashboard-form__input" name="difficulty" id="filter_difficulty">
-                            <option value="">All levels</option>
-                            <?php foreach ($difficultyOptions as $difficulty):
-                                $value = $difficulty['value'];
-                                $isSelected = $selectedDifficulty !== null && $selectedDifficulty === $value;
-                            ?>
-                            <option value="<?php echo htmlspecialchars($value); ?>" <?php echo $isSelected ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($difficulty['label']); ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <button type="submit" class="dashboard-form__button dashboard-form__button--full">Apply filters</button>
-                </form>
                 <?php if (!empty($recommended)): ?>
                 <ul class="dashboard-list dashboard-list--questions">
                     <?php foreach ($recommended as $question):
@@ -148,6 +114,10 @@ include __DIR__ . '/header.php';
                             if (!empty($question['tags'])) {
                                 $tags = array_filter(array_map('trim', explode(',', $question['tags'])));
                             }
+                            $relatedQuestions = [];
+                            if (empty($tags)) {
+                                $relatedQuestions = get_related_questions((int) $question['id'], $topicId, 3);
+                            }
                         ?>
                         <?php if ($topicLabel || $difficultyLabel): ?>
                         <p class="dashboard-question__meta">
@@ -164,6 +134,18 @@ include __DIR__ . '/header.php';
                             <?php foreach ($tags as $tag): ?>
                             <span class="dashboard-question__tag"><?php echo htmlspecialchars($tag); ?></span>
                             <?php endforeach; ?>
+                        </div>
+                        <?php elseif (!empty($relatedQuestions)): ?>
+                        <div class="dashboard-question__related">
+                            <p class="dashboard-question__related-title">Related questions</p>
+                            <ul class="dashboard-question__related-list">
+                                <?php foreach ($relatedQuestions as $related):
+                                    $relatedSlug = dashboard_slugify($related['question_text']);
+                                    $relatedUrl = '/Pathanto/Questions/answer/' . (int) $related['id'] . '/' . $relatedSlug;
+                                ?>
+                                <li><a href="<?php echo htmlspecialchars($relatedUrl); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($related['question_text']); ?></a></li>
+                                <?php endforeach; ?>
+                            </ul>
                         </div>
                         <?php endif; ?>
                         <form class="dashboard-question__form" data-dashboard-question-form hidden>
@@ -195,7 +177,7 @@ include __DIR__ . '/header.php';
                     <?php endforeach; ?>
                 </ul>
                 <?php else: ?>
-                <p class="dashboard-empty-state">No recommendations right now. Try updating your filters.</p>
+                <p class="dashboard-empty-state">No recommendations right now. Check back after a few more attempts.</p>
                 <?php endif; ?>
             </article>
 

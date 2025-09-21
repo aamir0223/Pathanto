@@ -77,6 +77,29 @@ function recommend_questions($userId, $limit = 5, $filters = [])
     return $rows;
 }
 
+function get_related_questions($questionId, $topicId, $limit = 3): array
+{
+    global $conn;
+    if ($topicId === null) {
+        return [];
+    }
+
+    $topicIdInt = (int) $topicId;
+    $questionIdInt = (int) $questionId;
+    $limitInt = max(1, (int) $limit);
+
+    $stmt = $conn->prepare('SELECT id, question_text FROM questions WHERE topic_id = ? AND id <> ? ORDER BY RAND() LIMIT ?');
+    if (!$stmt) {
+        error_log('get_related_questions prepare failed: ' . $conn->error);
+        return [];
+    }
+    $stmt->bind_param('iii', $topicIdInt, $questionIdInt, $limitInt);
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+    return $rows;
+}
+
 function get_topic_options(): array
 {
     global $conn;

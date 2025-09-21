@@ -390,6 +390,36 @@
     letter-spacing: 0.01em;
 }
 
+.dashboard-question__related {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.dashboard-question__related-title {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.dashboard-question__related-list {
+    list-style: disc;
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.dashboard-question__related-list a {
+    color: #1d4ed8;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.dashboard-question__related-list a:hover {
+    text-decoration: underline;
+}
+
 .dashboard-question__actions {
     display: flex;
     flex-wrap: wrap;
