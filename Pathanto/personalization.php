@@ -42,7 +42,7 @@ function get_daily_goal($userId)
 function recommend_questions($userId, $limit = 5, $filters = [])
 {
     global $conn;
-    $sql = "SELECT q.id, q.question_text, q.topic_id, q.difficulty FROM questions q LEFT JOIN (
+    $sql = "SELECT q.id, q.question_text, q.topic_id, q.difficulty, q.tags FROM questions q LEFT JOIN (
                 SELECT question_id, AVG(correct) AS acc FROM question_attempts WHERE user_id = ? GROUP BY question_id
             ) a ON q.id = a.question_id
             WHERE COALESCE(a.acc, 0) < 0.7";
@@ -75,5 +75,64 @@ function recommend_questions($userId, $limit = 5, $filters = [])
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
     return $rows;
+}
+
+function get_topic_options(): array
+{
+    global $conn;
+    $topics = [];
+
+    $result = $conn->query('SELECT id, name FROM topics ORDER BY name');
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            if ($row['id'] === null) {
+                continue;
+            }
+            $topics[] = [
+                'id' => $row['id'],
+                'label' => $row['name'] !== null && $row['name'] !== '' ? $row['name'] : 'Topic ' . $row['id'],
+            ];
+        }
+        $result->close();
+        if (!empty($topics)) {
+            return $topics;
+        }
+    }
+
+    $fallback = $conn->query('SELECT DISTINCT topic_id FROM questions WHERE topic_id IS NOT NULL ORDER BY topic_id');
+    if ($fallback instanceof mysqli_result) {
+        while ($row = $fallback->fetch_assoc()) {
+            $topicId = $row['topic_id'];
+            if ($topicId === null || $topicId === '') {
+                continue;
+            }
+            $label = is_numeric($topicId) ? 'Topic ' . $topicId : (string) $topicId;
+            $topics[] = ['id' => $topicId, 'label' => $label];
+        }
+        $fallback->close();
+    }
+
+    return $topics;
+}
+
+function get_difficulty_options(): array
+{
+    global $conn;
+    $options = [];
+    $result = $conn->query("SELECT DISTINCT difficulty FROM questions WHERE difficulty IS NOT NULL AND difficulty <> '' ORDER BY difficulty");
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $value = $row['difficulty'];
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $options[] = [
+                'value' => $value,
+                'label' => ucwords(str_replace(['-', '_'], ' ', $value)),
+            ];
+        }
+        $result->close();
+    }
+    return $options;
 }
 ?>

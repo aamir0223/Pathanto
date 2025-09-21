@@ -22,7 +22,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['daily_goal'])) {
     set_daily_goal($userId, $goal);
 }
 
-$filters      = ['topic' => $_GET['topic'] ?? null, 'difficulty' => $_GET['difficulty'] ?? null];
+$selectedTopic = isset($_GET['topic']) && $_GET['topic'] !== '' ? (int) $_GET['topic'] : null;
+$selectedDifficulty = isset($_GET['difficulty']) && $_GET['difficulty'] !== '' ? $_GET['difficulty'] : null;
+$filters      = ['topic' => $selectedTopic, 'difficulty' => $selectedDifficulty];
+$topicOptions = get_topic_options();
+$difficultyOptions = get_difficulty_options();
+$topicLabelMap = [];
+foreach ($topicOptions as $topicOption) {
+    $topicLabelMap[(string) $topicOption['id']] = $topicOption['label'];
+}
 $dashboard    = get_dashboard($userId);
 $summary      = get_progress_summary($userId);
 $dailyGoal    = get_daily_goal($userId);
@@ -92,14 +100,31 @@ include __DIR__ . '/header.php';
                 <form method="get" class="dashboard-form dashboard-form--filters">
                     <div class="dashboard-form__group">
                         <label class="dashboard-form__label" for="filter_topic">Topic</label>
-                        <input class="dashboard-form__input" type="text" name="topic" id="filter_topic"
-                            value="<?php echo htmlspecialchars($filters['topic'] ?? ''); ?>" placeholder="e.g. Algebra">
+                        <select class="dashboard-form__input" name="topic" id="filter_topic">
+                            <option value="">All topics</option>
+                            <?php foreach ($topicOptions as $topic):
+                                $value = $topic['id'];
+                                $isSelected = $selectedTopic !== null && (string) $selectedTopic === (string) $value;
+                            ?>
+                            <option value="<?php echo htmlspecialchars($value); ?>" <?php echo $isSelected ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($topic['label']); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="dashboard-form__group">
-                        <label class="dashboard-form__label" for="filter_difficulty">Difficulty</label>
-                        <input class="dashboard-form__input" type="text" name="difficulty" id="filter_difficulty"
-                            value="<?php echo htmlspecialchars($filters['difficulty'] ?? ''); ?>"
-                            placeholder="e.g. Medium">
+                        <label class="dashboard-form__label" for="filter_difficulty">Medium</label>
+                        <select class="dashboard-form__input" name="difficulty" id="filter_difficulty">
+                            <option value="">All levels</option>
+                            <?php foreach ($difficultyOptions as $difficulty):
+                                $value = $difficulty['value'];
+                                $isSelected = $selectedDifficulty !== null && $selectedDifficulty === $value;
+                            ?>
+                            <option value="<?php echo htmlspecialchars($value); ?>" <?php echo $isSelected ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($difficulty['label']); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <button type="submit" class="dashboard-form__button dashboard-form__button--full">Apply filters</button>
                 </form>
@@ -116,8 +141,30 @@ include __DIR__ . '/header.php';
                             <span class="dashboard-question__text"><?php echo htmlspecialchars($question['question_text']); ?></span>
                             <button type="button" class="dashboard-question__toggle" data-dashboard-question-toggle>Answer</button>
                         </div>
-                        <?php if ($difficultyLabel): ?>
-                        <p class="dashboard-question__meta">Difficulty: <?php echo htmlspecialchars($difficultyLabel); ?></p>
+                        <?php
+                            $topicId = $question['topic_id'] ?? null;
+                            $topicLabel = $topicId !== null ? ($topicLabelMap[(string) $topicId] ?? (is_numeric($topicId) ? 'Topic ' . $topicId : (string) $topicId)) : null;
+                            $tags = [];
+                            if (!empty($question['tags'])) {
+                                $tags = array_filter(array_map('trim', explode(',', $question['tags'])));
+                            }
+                        ?>
+                        <?php if ($topicLabel || $difficultyLabel): ?>
+                        <p class="dashboard-question__meta">
+                            <?php if ($topicLabel): ?>
+                            <span><strong>Topic:</strong> <?php echo htmlspecialchars($topicLabel); ?></span>
+                            <?php endif; ?>
+                            <?php if ($difficultyLabel): ?>
+                            <span><strong>Medium:</strong> <?php echo htmlspecialchars($difficultyLabel); ?></span>
+                            <?php endif; ?>
+                        </p>
+                        <?php endif; ?>
+                        <?php if (!empty($tags)): ?>
+                        <div class="dashboard-question__tags" aria-label="Subtopics">
+                            <?php foreach ($tags as $tag): ?>
+                            <span class="dashboard-question__tag"><?php echo htmlspecialchars($tag); ?></span>
+                            <?php endforeach; ?>
+                        </div>
                         <?php endif; ?>
                         <form class="dashboard-question__form" data-dashboard-question-form hidden>
                             <fieldset class="dashboard-question__choices">
@@ -186,10 +233,11 @@ include __DIR__ . '/header.php';
                 <ul class="dashboard-list dashboard-list--topics">
                     <?php foreach ($dashboard['topics'] as $topic => $acc):
                         $topicPercent = max(0, min(100, round($acc * 100, 1)));
+                        $topicLabel = $topicLabelMap[(string) $topic] ?? (is_numeric($topic) ? 'Topic ' . $topic : (string) $topic);
                     ?>
                     <li class="dashboard-list__item">
                         <div class="topic-accuracy">
-                            <p class="topic-accuracy__label">Topic <?php echo htmlspecialchars($topic); ?></p>
+                            <p class="topic-accuracy__label"><?php echo htmlspecialchars($topicLabel); ?></p>
                             <div class="topic-accuracy__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
                                 aria-valuenow="<?php echo $topicPercent; ?>">
                                 <span class="topic-accuracy__fill" style="width: <?php echo $topicPercent; ?>%"></span>
