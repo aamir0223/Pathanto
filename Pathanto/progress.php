@@ -26,6 +26,19 @@ $conn->query("CREATE TABLE IF NOT EXISTS user_points (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
+$createFeed = "CREATE TABLE IF NOT EXISTS question_feed (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    question_id INT NOT NULL,
+    correct TINYINT(1) NOT NULL,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_feed_created (created_at)
+)";
+if (!$conn->query($createFeed)) {
+    error_log('Failed creating question_feed table: ' . $conn->error);
+}
+
 /**
  * Record a user's attempt at a question.
  */
@@ -41,6 +54,42 @@ function record_attempt($userId, $questionId, $correct, $topicId, $difficulty, $
     $stmt->bind_param('iiiisi', $userId, $questionId, $c, $topicId, $difficulty, $timeTaken);
     $stmt->execute();
     $stmt->close();
+}
+
+function publish_attempt($userId, $questionId, $correct, $note = null)
+{
+    global $conn;
+    $stmt = $conn->prepare('INSERT INTO question_feed (user_id, question_id, correct, note) VALUES (?, ?, ?, ?)');
+    if (!$stmt) {
+        error_log('publish_attempt prepare failed: ' . $conn->error);
+        return;
+    }
+    $c = $correct ? 1 : 0;
+    $noteParam = $note !== null ? $note : '';
+    $stmt->bind_param('iiis', $userId, $questionId, $c, $noteParam);
+    $stmt->execute();
+    $stmt->close();
+}
+
+function get_public_feed($limit = 10)
+{
+    global $conn;
+    $sql = 'SELECT f.id, f.question_id, f.correct, f.note, f.created_at, q.question_text, u.name
+            FROM question_feed f
+            JOIN questions q ON f.question_id = q.id
+            JOIN users u ON f.user_id = u.id
+            ORDER BY f.created_at DESC
+            LIMIT ?';
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log('get_public_feed prepare failed: ' . $conn->error);
+        return [];
+    }
+    $stmt->bind_param('i', $limit);
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+    return $rows;
 }
 
 /**

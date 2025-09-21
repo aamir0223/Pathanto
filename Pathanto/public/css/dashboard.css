@@ -1,16 +1,16 @@
 .dashboard-page {
-    padding: 5rem 1.25rem 4rem;
+    padding: 4rem 1.25rem 3.5rem;
     background: linear-gradient(180deg, #f8fbff 0%, #f5f7fb 35%, #ffffff 100%);
 }
 
 .dashboard-page > *:not(:first-child) {
-    margin-top: 2.5rem;
+    margin-top: 2rem;
 }
 
 .dashboard-hero {
-    max-width: 1100px;
+    max-width: 1240px;
     margin: 0 auto;
-    padding: 2.5rem;
+    padding: 2.15rem 2.4rem;
     border-radius: 24px;
     background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 55%),
         radial-gradient(circle at bottom left, rgba(129, 140, 248, 0.18), transparent 60%),
@@ -109,15 +109,15 @@
 }
 
 .dashboard-grid {
-    max-width: 1100px;
+    max-width: 1240px;
     margin: 0 auto;
     display: grid;
-    gap: 2rem;
+    gap: 1.6rem;
 }
 
 .dashboard-column {
     display: grid;
-    gap: 2rem;
+    gap: 1.6rem;
 }
 
 @media (min-width: 992px) {
@@ -131,9 +131,9 @@
     border-radius: 20px;
     border: 1px solid rgba(226, 232, 240, 0.8);
     box-shadow: 0 24px 45px rgba(15, 23, 42, 0.08);
-    padding: 1.9rem;
+    padding: 1.65rem;
     display: grid;
-    gap: 1.5rem;
+    gap: 1.35rem;
 }
 
 .dashboard-card__header {
@@ -183,7 +183,7 @@
 
 .dashboard-form__row {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.65rem;
     flex-wrap: wrap;
 }
 
@@ -251,11 +251,148 @@
 
 .dashboard-list__item {
     display: grid;
-    gap: 0.5rem;
-    padding: 1rem 1.1rem;
+    gap: 0.45rem;
+    padding: 0.95rem 1rem;
     border-radius: 14px;
     border: 1px solid rgba(226, 232, 240, 0.8);
     background: #f8fafc;
+}
+
+.dashboard-list--questions .dashboard-list__item {
+    gap: 0.9rem;
+}
+
+.dashboard-question__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.dashboard-question__text {
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.5;
+}
+
+.dashboard-question__toggle {
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: #fff;
+    color: #1d4ed8;
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dashboard-question__toggle:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.dashboard-question__toggle:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.dashboard-question__meta {
+    margin: -0.25rem 0 0;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.dashboard-question__form {
+    display: grid;
+    gap: 0.75rem;
+    border-top: 1px solid rgba(203, 213, 225, 0.6);
+    padding-top: 0.8rem;
+}
+
+.dashboard-question__choices {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.dashboard-question__choice {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.92rem;
+    color: #1f2937;
+}
+
+.dashboard-question__choice input[type="radio"] {
+    accent-color: #2563eb;
+}
+
+.dashboard-question__share {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.dashboard-question__share input {
+    accent-color: #2563eb;
+}
+
+.dashboard-question__note {
+    min-height: 80px;
+    border-radius: 12px;
+    border: 1px solid #cbd5f5;
+    background: #fff;
+    padding: 0.75rem 0.9rem;
+    font-size: 0.95rem;
+    resize: vertical;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dashboard-question__note:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.dashboard-question__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.dashboard-question__link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
+.dashboard-question__link:hover {
+    text-decoration: underline;
+}
+
+.dashboard-question__status {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.dashboard-question__status.is-success {
+    color: #15803d;
+}
+
+.dashboard-question__status.is-error {
+    color: #b91c1c;
+}
+
+.dashboard-question--completed {
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    background: rgba(220, 252, 231, 0.55);
 }
 
 .dashboard-list__text {
@@ -277,6 +414,17 @@
 
 .dashboard-list--attempts .dashboard-list__meta {
     grid-column: 1 / -1;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }
 
 .dashboard-badge {
@@ -384,6 +532,68 @@
     border: 1px dashed rgba(148, 163, 184, 0.45);
 }
 
+.dashboard-feed {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.9rem;
+}
+
+.dashboard-feed__item {
+    border-radius: 14px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    background: #f8fafc;
+    padding: 1rem 1.1rem;
+    display: grid;
+    gap: 0.6rem;
+}
+
+.dashboard-feed__item.is-correct {
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.dashboard-feed__item.is-incorrect {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.dashboard-feed__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dashboard-feed__user {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.dashboard-feed__status {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.dashboard-feed__question {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.dashboard-feed__note {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.dashboard-feed__time {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
 @media (max-width: 768px) {
     .dashboard-page {
         padding-top: 4.25rem;
@@ -404,5 +614,14 @@
 
     .dashboard-list--attempts .dashboard-list__item {
         grid-template-columns: 1fr;
+    }
+
+    .dashboard-question__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dashboard-question__toggle {
+        align-self: flex-start;
     }
 }

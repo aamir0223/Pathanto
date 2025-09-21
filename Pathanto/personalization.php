@@ -42,7 +42,7 @@ function get_daily_goal($userId)
 function recommend_questions($userId, $limit = 5, $filters = [])
 {
     global $conn;
-    $sql = "SELECT q.id, q.question_text FROM questions q LEFT JOIN (
+    $sql = "SELECT q.id, q.question_text, q.topic_id, q.difficulty FROM questions q LEFT JOIN (
                 SELECT question_id, AVG(correct) AS acc FROM question_attempts WHERE user_id = ? GROUP BY question_id
             ) a ON q.id = a.question_id
             WHERE COALESCE(a.acc, 0) < 0.7";

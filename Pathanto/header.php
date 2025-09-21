@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-
 <head>
-
-
-
   <?php $currentPageUrl = $_SERVER["REQUEST_URI"]; ?>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
