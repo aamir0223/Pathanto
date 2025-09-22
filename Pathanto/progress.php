@@ -11,10 +11,36 @@ $createAttempts = "CREATE TABLE IF NOT EXISTS question_attempts (
     topic_id INT,
     difficulty VARCHAR(10),
     time_taken INT,
+    user_note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
 if (!$conn->query($createAttempts)) {
     error_log('Failed creating question_attempts table: ' . $conn->error);
+}
+
+// Older installations may be missing the newer optional columns; add them if required.
+$attemptColumns = [];
+$columnsResult = $conn->query('SHOW COLUMNS FROM question_attempts');
+if ($columnsResult instanceof mysqli_result) {
+    while ($column = $columnsResult->fetch_assoc()) {
+        $attemptColumns[strtolower($column['Field'])] = true;
+    }
+    $columnsResult->close();
+}
+
+$requiredAttemptColumns = [
+    'topic_id' => 'ALTER TABLE question_attempts ADD COLUMN topic_id INT NULL AFTER correct',
+    'difficulty' => "ALTER TABLE question_attempts ADD COLUMN difficulty VARCHAR(10) NULL AFTER topic_id",
+    'time_taken' => 'ALTER TABLE question_attempts ADD COLUMN time_taken INT NULL AFTER difficulty',
+    'user_note' => 'ALTER TABLE question_attempts ADD COLUMN user_note TEXT NULL AFTER time_taken'
+];
+
+foreach ($requiredAttemptColumns as $columnName => $alterSql) {
+    if (!isset($attemptColumns[$columnName])) {
+        if (!$conn->query($alterSql)) {
+            error_log('Failed altering question_attempts table (' . $columnName . '): ' . $conn->error);
+        }
+    }
 }
 
 // Dashboard relies on a points table; create it if missing.
@@ -37,6 +63,30 @@ $createFeed = "CREATE TABLE IF NOT EXISTS question_feed (
 )";
 if (!$conn->query($createFeed)) {
     error_log('Failed creating question_feed table: ' . $conn->error);
+}
+
+// Verify the community feed table has the expected columns so sharing works.
+$feedColumns = [];
+$feedDescribe = $conn->query('SHOW COLUMNS FROM question_feed');
+if ($feedDescribe instanceof mysqli_result) {
+    while ($column = $feedDescribe->fetch_assoc()) {
+        $feedColumns[strtolower($column['Field'])] = true;
+    }
+    $feedDescribe->close();
+}
+
+$requiredFeedColumns = [
+    'correct' => 'ALTER TABLE question_feed ADD COLUMN correct TINYINT(1) NOT NULL DEFAULT 0 AFTER question_id',
+    'note' => 'ALTER TABLE question_feed ADD COLUMN note TEXT NULL AFTER correct',
+    'created_at' => 'ALTER TABLE question_feed ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER note'
+];
+
+foreach ($requiredFeedColumns as $columnName => $alterSql) {
+    if (!isset($feedColumns[$columnName])) {
+        if (!$conn->query($alterSql)) {
+            error_log('Failed altering question_feed table (' . $columnName . '): ' . $conn->error);
+        }
+    }
 }
 
 $createReactions = "CREATE TABLE IF NOT EXISTS question_feed_reactions (
@@ -66,26 +116,41 @@ if (!$conn->query($createComments)) {
 
 /**
  * Record a user's attempt at a question.
+ *
+ * @return int|null Inserted attempt id on success, otherwise null.
  */
-function record_attempt($userId, $questionId, $correct, $topicId, $difficulty, $timeTaken)
+function record_attempt($userId, $questionId, $correct, $topicId, $difficulty, $timeTaken, $note = null)
 {
     global $conn;
-    $stmt = $conn->prepare('INSERT INTO question_attempts (user_id, question_id, correct, topic_id, difficulty, time_taken) VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt = $conn->prepare('INSERT INTO question_attempts (user_id, question_id, correct, topic_id, difficulty, time_taken, user_note) VALUES (?, ?, ?, ?, ?, ?, ?)');
     if (!$stmt) {
         error_log('record_attempt prepare failed: ' . $conn->error);
-        return;
+        return null;
     }
     $c = $correct ? 1 : 0;
-    $stmt->bind_param('iiiisi', $userId, $questionId, $c, $topicId, $difficulty, $timeTaken);
-    $stmt->execute();
+    $noteParam = $note !== null ? $note : '';
+    if (!$stmt->bind_param('iiiisis', $userId, $questionId, $c, $topicId, $difficulty, $timeTaken, $noteParam)) {
+        error_log('record_attempt bind failed: ' . $stmt->error);
+        $stmt->close();
+        return null;
+    }
+    if (!$stmt->execute()) {
+        error_log('record_attempt execute failed: ' . $stmt->error);
+        $stmt->close();
+        return null;
+    }
+    $insertId = $stmt->insert_id > 0 ? $stmt->insert_id : $conn->insert_id;
     $stmt->close();
+    return $insertId > 0 ? (int) $insertId : null;
 }
 
-function publish_attempt($userId, $questionId, $correct, $note = null)
+function publish_attempt($userId, $questionId, $correct, $note = null, ?string &$error = null)
 {
     global $conn;
+    $error = null;
     $stmt = $conn->prepare('INSERT INTO question_feed (user_id, question_id, correct, note) VALUES (?, ?, ?, ?)');
     if (!$stmt) {
+        $error = 'prepare: ' . $conn->error;
         error_log('publish_attempt prepare failed: ' . $conn->error);
         return false;
     }
@@ -94,9 +159,65 @@ function publish_attempt($userId, $questionId, $correct, $note = null)
     $stmt->bind_param('iiis', $userId, $questionId, $c, $noteParam);
     $ok = $stmt->execute();
     if (!$ok) {
+        $error = 'execute: ' . $stmt->error;
         error_log('publish_attempt execute failed: ' . $stmt->error);
     }
     $stmt->close();
+    return $ok;
+}
+
+/**
+ * Ensure a question_feed entry exists for a recorded attempt.
+ */
+function ensure_feed_from_attempt($attemptId)
+{
+    global $conn;
+    $attemptId = (int) $attemptId;
+    if ($attemptId <= 0) {
+        return false;
+    }
+
+    $attemptStmt = $conn->prepare('SELECT user_id, question_id, correct, user_note, created_at FROM question_attempts WHERE id = ? LIMIT 1');
+    if (!$attemptStmt) {
+        error_log('ensure_feed_from_attempt select prepare failed: ' . $conn->error);
+        return false;
+    }
+    $attemptStmt->bind_param('i', $attemptId);
+    $attemptStmt->execute();
+    $attempt = $attemptStmt->get_result()->fetch_assoc();
+    $attemptStmt->close();
+    if (!$attempt) {
+        return false;
+    }
+
+    $userId = (int) $attempt['user_id'];
+    $questionId = (int) $attempt['question_id'];
+    $correct = (int) $attempt['correct'] === 1 ? 1 : 0;
+    $note = $attempt['user_note'] !== null ? $attempt['user_note'] : '';
+    $createdAt = $attempt['created_at'];
+
+    $checkStmt = $conn->prepare('SELECT id FROM question_feed WHERE user_id = ? AND question_id = ? AND ABS(TIMESTAMPDIFF(SECOND, created_at, ?)) <= 5 LIMIT 1');
+    if ($checkStmt) {
+        $checkStmt->bind_param('iis', $userId, $questionId, $createdAt);
+        $checkStmt->execute();
+        $exists = $checkStmt->get_result()->fetch_assoc();
+        $checkStmt->close();
+        if ($exists) {
+            return true;
+        }
+    }
+
+    $insertStmt = $conn->prepare('INSERT INTO question_feed (user_id, question_id, correct, note, created_at) VALUES (?, ?, ?, ?, ?)');
+    if (!$insertStmt) {
+        error_log('ensure_feed_from_attempt insert prepare failed: ' . $conn->error);
+        return false;
+    }
+    $insertStmt->bind_param('iiiss', $userId, $questionId, $correct, $note, $createdAt);
+    $ok = $insertStmt->execute();
+    if (!$ok) {
+        error_log('ensure_feed_from_attempt insert failed: ' . $insertStmt->error);
+    }
+    $insertStmt->close();
     return $ok;
 }
 
@@ -112,12 +233,17 @@ function build_feed_payload(array $rows, $currentUserId = null)
         $feedId = (int) $row['id'];
         $questionText = $row['question_text'] !== null ? trim(strip_tags(htmlspecialchars_decode($row['question_text']))) : ('Question #' . (int) $row['question_id']);
         $answerText = $row['answer_text'] !== null ? trim(strip_tags(htmlspecialchars_decode($row['answer_text']))) : '';
+        $displayName = $row['display_name'] ?? $row['name'] ?? null;
+        if ($displayName === null || trim($displayName) === '') {
+            $displayName = 'User #' . ((int) ($row['user_id'] ?? 0));
+        }
         $feed[$feedId] = [
             'id' => $feedId,
+            'user_id' => (int) ($row['user_id'] ?? 0),
             'question_id' => (int) $row['question_id'],
             'question_text' => $questionText,
             'answer_text' => $answerText,
-            'user' => $row['name'],
+            'user' => $displayName,
             'correct' => (bool) $row['correct'],
             'note' => $row['note'] !== null ? trim($row['note']) : '',
             'created_at' => $row['created_at'],
@@ -206,16 +332,17 @@ function get_public_feed($limit = 10, $currentUserId = null)
     $answerSelect = $hasAnswersTable ? '(SELECT answer_text FROM answers WHERE question_id = f.question_id LIMIT 1)' : 'NULL';
 
     $sql = "SELECT f.id,
+                   f.user_id,
                    f.question_id,
                    f.correct,
                    f.note,
                    f.created_at,
                    COALESCE(q.question_text, CONCAT('Question #', f.question_id)) AS question_text,
                    $answerSelect AS answer_text,
-                   u.name
+                   COALESCE(u.name, CONCAT('User #', f.user_id)) AS display_name
             FROM question_feed f
             LEFT JOIN questions q ON f.question_id = q.id
-            JOIN users u ON f.user_id = u.id
+            LEFT JOIN users u ON f.user_id = u.id
             ORDER BY f.created_at DESC
             LIMIT ?";
     $stmt = $conn->prepare($sql);
@@ -227,6 +354,48 @@ function get_public_feed($limit = 10, $currentUserId = null)
     $stmt->execute();
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
+
+    if (empty($rows) && $currentUserId) {
+        $fallbackAnswerSelect = $hasAnswersTable ? '(SELECT answer_text FROM answers WHERE question_id = qa.question_id LIMIT 1)' : 'NULL';
+        $fallbackSql = "SELECT qa.id AS attempt_id,
+                               qa.user_id,
+                               qa.question_id,
+                               qa.correct,
+                               qa.user_note AS note,
+                               qa.created_at,
+                               COALESCE(q.question_text, CONCAT('Question #', qa.question_id)) AS question_text,
+                               $fallbackAnswerSelect AS answer_text,
+                               COALESCE(u.name, CONCAT('User #', qa.user_id)) AS display_name
+                        FROM question_attempts qa
+                        LEFT JOIN questions q ON qa.question_id = q.id
+                        LEFT JOIN users u ON qa.user_id = u.id
+                        WHERE qa.user_id = ?
+                        ORDER BY qa.created_at DESC
+                        LIMIT ?";
+        $fallbackStmt = $conn->prepare($fallbackSql);
+        if ($fallbackStmt) {
+            $fallbackStmt->bind_param('ii', $currentUserId, $limit);
+            $fallbackStmt->execute();
+            $fallbackRows = $fallbackStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $fallbackStmt->close();
+
+            if (!empty($fallbackRows)) {
+                foreach ($fallbackRows as $fallbackRow) {
+                    if (!empty($fallbackRow['attempt_id'])) {
+                        ensure_feed_from_attempt((int) $fallbackRow['attempt_id']);
+                    }
+                }
+
+                $stmt = $conn->prepare($sql);
+                if ($stmt) {
+                    $stmt->bind_param('i', $limit);
+                    $stmt->execute();
+                    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                    $stmt->close();
+                }
+            }
+        }
+    }
 
     return build_feed_payload($rows, $currentUserId);
 }
@@ -247,16 +416,17 @@ function get_feed_entry($feedId, $currentUserId = null)
     $answerSelect = $hasAnswersTable ? '(SELECT answer_text FROM answers WHERE question_id = f.question_id LIMIT 1)' : 'NULL';
 
     $sql = "SELECT f.id,
+                   f.user_id,
                    f.question_id,
                    f.correct,
                    f.note,
                    f.created_at,
                    COALESCE(q.question_text, CONCAT('Question #', f.question_id)) AS question_text,
                    $answerSelect AS answer_text,
-                   u.name
+                   COALESCE(u.name, CONCAT('User #', f.user_id)) AS display_name
             FROM question_feed f
             LEFT JOIN questions q ON f.question_id = q.id
-            JOIN users u ON f.user_id = u.id
+            LEFT JOIN users u ON f.user_id = u.id
             WHERE f.id = ?
             LIMIT 1";
     $stmt = $conn->prepare($sql);
@@ -359,7 +529,18 @@ function get_dashboard($userId)
     }
 
     // Last 10 attempts per question with question text and timestamp
-    $sql = 'SELECT qa.question_id, q.question_text, qa.correct, qa.created_at
+    static $hasAnswersRecent = null;
+    if ($hasAnswersRecent === null) {
+        $check = $conn->query("SHOW TABLES LIKE 'answers'");
+        $hasAnswersRecent = $check && $check->num_rows > 0;
+        if ($check instanceof mysqli_result) {
+            $check->close();
+        }
+    }
+
+    $answerRecentSelect = $hasAnswersRecent ? '(SELECT answer_text FROM answers WHERE question_id = qa.question_id LIMIT 1)' : 'NULL';
+
+    $sql = 'SELECT qa.question_id, q.question_text, qa.correct, qa.created_at, ' . $answerRecentSelect . ' AS answer_text, qa.user_note
             FROM question_attempts qa
             JOIN (
                 SELECT question_id, MAX(created_at) AS last_attempt

@@ -23,7 +23,12 @@ if ($action !== 'answer_question') {
 $questionId = isset($_POST['questionId']) ? (int) $_POST['questionId'] : 0;
 $result     = $_POST['result'] ?? '';
 $note       = trim($_POST['note'] ?? '');
-$shareFlag  = isset($_POST['share']) ? filter_var($_POST['share'], FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) : true;
+$shareFlagRaw = $_POST['share'] ?? null;
+$shareFlag = false;
+if ($shareFlagRaw !== null) {
+    $s = strtolower((string)$shareFlagRaw);
+    $shareFlag = in_array($s, ['1','true','on','yes'], true);
+}
 
 if (!$questionId || !in_array($result, ['correct', 'incorrect'], true)) {
     http_response_code(422);
@@ -39,35 +44,65 @@ if (!$questionMeta) {
 }
 
 $isCorrect = $result === 'correct';
-record_attempt($userId, $questionId, $isCorrect, $questionMeta['topic_id'], $questionMeta['difficulty'], 0);
+$trimmer = function_exists('mb_substr') ? 'mb_substr' : 'substr';
+$trimmedNote = $note !== '' ? $trimmer($note, 0, 400) : '';
+
+$attemptId = record_attempt($userId, $questionId, $isCorrect, $questionMeta['topic_id'], $questionMeta['difficulty'], 0, $trimmedNote);
+if ($attemptId === null) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Unable to record your attempt. Please try again.']);
+    exit;
+}
 
 if ($isCorrect) {
     add_points($userId, POINTS_CORRECT_ANSWER, 'dashboard answer');
 }
 
+
+$sharedToFeed = false;
 if ($shareFlag) {
-    $trimmer = function_exists('mb_substr') ? 'mb_substr' : 'substr';
-    $trimmedNote = $note !== '' ? $trimmer($note, 0, 400) : '';
-    if (!publish_attempt($userId, $questionId, $isCorrect, $trimmedNote)) {
-        error_log('dashboard_action: failed to publish attempt for question ' . $questionId . ' by user ' . $userId);
+    $sql = "INSERT INTO question_feed (user_id, question_id, correct, note, created_at)
+            VALUES (?, ?, ?, ?, NOW())";
+    $stmt = $conn->prepare($sql);
+    if ($stmt) {
+        $correctVal = $isCorrect ? 1 : 0;
+        $noteVal = $trimmedNote !== '' ? $trimmedNote : null;
+        $stmt->bind_param("iiis", $userId, $questionId, $correctVal, $noteVal);
+        if ($stmt->execute()) {
+            $sharedToFeed = true;
+        } else {
+            error_log('question_feed insert failed: ' . $stmt->error);
+        }
+        $stmt->close();
+    } else {
+        error_log('question_feed prepare failed: ' . $conn->error);
     }
 }
 
 $feed = get_public_feed(6, $userId);
 
-echo json_encode([
+$response = [
     'success' => true,
+    'shared'  => $sharedToFeed,
     'message' => $isCorrect ? 'Great job! Progress recorded.' : 'Attempt recorded. Keep practicing!',
     'feed'    => array_map(static function ($item) {
         return [
             'question' => $item['question_text'],
-            'user'     => $item['name'],
+            'question_id' => $item['question_id'] ?? null,
+            'answer'   => $item['answer_text'] ?? '',
+            'user'     => $item['user'] ?? '',
             'correct'  => (bool) $item['correct'],
-            'note'     => $item['note'],
+            'note'     => $item['note'] ?? '',
             'time'     => $item['created_at'],
         ];
     }, $feed),
-]);
+];
+
+if ($shareFlag && !$sharedToFeed) {
+    $response['message'] .= ' (Shared to community feed: failed)';
+}
+
+echo json_encode($response);
 exit;
 
 function fetch_question_meta(int $questionId): ?array

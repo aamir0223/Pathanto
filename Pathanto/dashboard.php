@@ -46,7 +46,7 @@ $displayAnswered = min($answeredQuestions, $totalQuestions);
 $extraAnswered = max(0, $answeredQuestions - $totalQuestions);
 $streakDays = (int) ($dashboard['streak'] ?? 0);
 $pointsTotal = (int) ($dashboard['points'] ?? 0);
-$publicFeed = get_public_feed(6);
+$publicFeed = get_public_feed(6, $userId);
 
 include __DIR__ . '/header.php';
 ?>
@@ -85,7 +85,7 @@ include __DIR__ . '/header.php';
 
     <section class="dashboard-grid">
         <div class="dashboard-column">
-            <article class="dashboard-card">
+            <article class="dashboard-card dashboard-card--scroll">
                 <header class="dashboard-card__header">
                     <h2 class="dashboard-card__title">Daily goal</h2>
                     <p class="dashboard-card__meta">Set a realistic target to stay consistent.</p>
@@ -100,7 +100,7 @@ include __DIR__ . '/header.php';
                 </form>
             </article>
 
-            <article class="dashboard-card">
+            <article class="dashboard-card dashboard-card--scroll">
                 <header class="dashboard-card__header">
                     <h2 class="dashboard-card__title">Recommended questions</h2>
                     <p class="dashboard-card__meta">Curated practice picked from your recent activity.</p>
@@ -211,7 +211,7 @@ include __DIR__ . '/header.php';
                 <?php endif; ?>
             </article>
 
-            <article class="dashboard-card">
+            <article class="dashboard-card dashboard-card--scroll">
                 <header class="dashboard-card__header">
                     <h2 class="dashboard-card__title">Recent attempts</h2>
                     <p class="dashboard-card__meta">See how you performed on your latest questions.</p>
@@ -221,11 +221,23 @@ include __DIR__ . '/header.php';
                     <?php foreach ($dashboard['recent'] as $attempt):
                         $statusLabel = $attempt['correct'] ? 'Correct' : 'Incorrect';
                         $statusClass = $attempt['correct'] ? 'is-correct' : 'is-incorrect';
+                        $userNote = '';
+                        if (isset($attempt['user_note'])) {
+                            $userNote = trim((string) $attempt['user_note']);
+                        }
+                        $recentSlug = dashboard_slugify($attempt['question_text']);
+                        $recentSolutionUrl = '/Pathanto/Questions/answer/' . (int) $attempt['question_id'] . '/' . $recentSlug;
                     ?>
                     <li class="dashboard-list__item">
                         <span class="dashboard-list__text"><?php echo htmlspecialchars($attempt['question_text']); ?></span>
                         <span class="dashboard-badge <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span>
                         <span class="dashboard-list__meta"><?php echo htmlspecialchars($attempt['created_at']); ?></span>
+                        <div class="dashboard-list__details">
+                            <?php if ($userNote !== ''): ?>
+                            <p class="dashboard-list__note"><strong>Your answer:</strong> <?php echo nl2br(htmlspecialchars($userNote)); ?></p>
+                            <?php endif; ?>
+                            <p class="dashboard-list__link"><a href="<?php echo htmlspecialchars($recentSolutionUrl); ?>" target="_blank" rel="noopener">View original answer</a></p>
+                        </div>
                     </li>
                     <?php endforeach; ?>
                 </ul>
@@ -236,7 +248,7 @@ include __DIR__ . '/header.php';
         </div>
 
         <div class="dashboard-column">
-            <article class="dashboard-card">
+            <article class="dashboard-card dashboard-card--scroll">
                 <header class="dashboard-card__header">
                     <h2 class="dashboard-card__title">Topic accuracy</h2>
                     <p class="dashboard-card__meta">Identify areas that may need a bit more practice.</p>
@@ -283,11 +295,12 @@ include __DIR__ . '/header.php';
                         $timeObj = new DateTime($item['created_at']);
                         $displayTime = $timeObj->format('M j, g:i a');
                         $isoTime = $timeObj->format(DateTime::ATOM);
-                        $answerText = $item['answer_text'] ?? '';
                         $likes = (int) ($item['likes'] ?? 0);
                         $dislikes = (int) ($item['dislikes'] ?? 0);
                         $userReaction = $item['user_reaction'] ?? null;
                         $comments = $item['comments'] ?? [];
+                        $feedSlug = dashboard_slugify($item['question_text']);
+                        $feedSolutionUrl = '/Pathanto/Questions/answer/' . (int) $item['question_id'] . '/' . $feedSlug;
                     ?>
                     <li class="dashboard-feed__item <?php echo $statusClass; ?>" data-feed-item data-feed-id="<?php echo (int) $item['id']; ?>">
                         <div class="dashboard-feed__header">
@@ -296,13 +309,11 @@ include __DIR__ . '/header.php';
                         </div>
                         <p class="dashboard-feed__question"><?php echo htmlspecialchars($item['question_text']); ?></p>
                         <p class="dashboard-feed__question-id">Question #<?php echo (int) $item['question_id']; ?></p>
-                        <?php if ($answerText !== ''): ?>
-                        <p class="dashboard-feed__answer-label">Answer</p>
-                        <p class="dashboard-feed__answer"><?php echo nl2br(htmlspecialchars($answerText)); ?></p>
-                        <?php endif; ?>
                         <?php if (!empty($item['note'])): ?>
+                        <p class="dashboard-feed__answer-label">User answer</p>
                         <p class="dashboard-feed__note"><?php echo nl2br(htmlspecialchars($item['note'])); ?></p>
                         <?php endif; ?>
+                        <p class="dashboard-feed__link"><a href="<?php echo htmlspecialchars($feedSolutionUrl); ?>" target="_blank" rel="noopener">View solution</a></p>
                         <div class="dashboard-feed__reactions">
                             <button type="button" class="dashboard-feed__reaction<?php echo $userReaction === 'like' ? ' is-active' : ''; ?>" data-feed-react data-reaction="like">
                                 👍 <span><?php echo $likes; ?></span>
@@ -379,6 +390,18 @@ document.addEventListener('DOMContentLoaded', function () {
         return feedContainer;
     };
 
+    const slugify = (text) => {
+        if (typeof text !== 'string') {
+            return '';
+        }
+        return text
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
+    };
+
     const renderFeed = (items) => {
         const container = ensureFeedContainer();
         if (!container) {
@@ -406,9 +429,17 @@ document.addEventListener('DOMContentLoaded', function () {
             const statusLabel = item.correct ? 'Correct' : 'Needs review';
             const date = new Date(item.time);
             const displayTime = Number.isNaN(date.getTime()) ? '' : formatter.format(date);
-            const safeNote = item.note ? item.note.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '';
-            const safeQuestion = item.question.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            const safeUser = item.user.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            const noteText = typeof item.note === 'string' ? item.note : '';
+            const questionText = typeof item.question === 'string' ? item.question : '';
+            const userName = typeof item.user === 'string' && item.user.trim() !== '' ? item.user : 'Anonymous';
+            const questionId = Number.isFinite(Number(item.question_id)) ? Number(item.question_id) : null;
+            const questionSlug = questionId && questionText ? slugify(questionText) : '';
+            const questionLink = questionId && questionSlug ? `/Pathanto/Questions/answer/${questionId}/${questionSlug}` : null;
+
+            const safeNote = noteText ? noteText.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '';
+            const safeQuestion = questionText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const safeUser = userName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
             return `
                 <li class="dashboard-feed__item ${statusClass}">
@@ -417,7 +448,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span class="dashboard-feed__status">${statusLabel}</span>
                     </div>
                     <p class="dashboard-feed__question">${safeQuestion}</p>
-                    ${safeNote ? `<p class="dashboard-feed__note">${safeNote}</p>` : ''}
+                    ${questionId ? `<p class="dashboard-feed__question-id">Question #${questionId}</p>` : ''}
+                    ${safeNote ? `<p class="dashboard-feed__answer-label">User answer</p><p class="dashboard-feed__note">${safeNote}</p>` : ''}
+                    ${questionLink ? `<p class="dashboard-feed__link"><a href="${questionLink}" target="_blank" rel="noopener">View solution</a></p>` : ''}
                     ${displayTime ? `<time class="dashboard-feed__time">${displayTime}</time>` : ''}
                 </li>
             `;
@@ -500,7 +533,9 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('action', 'answer_question');
             formData.append('questionId', questionId);
             formData.append('result', radio.value);
-            formData.append('share', shareInput && shareInput.checked ? 'true' : 'false');
+            if (shareInput && shareInput.checked) {
+                formData.append('share', '1'); // only send when enabled
+            }
             if (noteField && noteField.value.trim()) {
                 formData.append('note', noteField.value.trim());
             }
