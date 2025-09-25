@@ -354,15 +354,52 @@ include __DIR__ . '/header.php';
                     <p class="dashboard-card__meta">Compare your progress with the community.</p>
                 </header>
                 <?php if (!empty($leaders)): ?>
+                <?php
+                $maxLeaderboardPoints = 0;
+                foreach ($leaders as $leaderRow) {
+                    $leaderPoints = (int) ($leaderRow['total'] ?? 0);
+                    if ($leaderPoints > $maxLeaderboardPoints) {
+                        $maxLeaderboardPoints = $leaderPoints;
+                    }
+                }
+                ?>
                 <ol class="dashboard-leaderboard">
                     <?php foreach ($leaders as $index => $row):
                         $uid    = (int) $row['user_id'];
                         $points = (int) $row['total'];
                         $name   = $row['name'] ?? ('User ' . $uid);
+                        $initials = strtoupper(substr(trim((string) $name), 0, 1));
+                        if ($initials === '') {
+                            $initials = 'U';
+                        }
+                        $percent = $maxLeaderboardPoints > 0 ? max(5, (int) round(($points / $maxLeaderboardPoints) * 100)) : 0;
+                        $rankClass = '';
+                        $badgeLabel = '';
+                        if ($index === 0) {
+                            $rankClass = ' dashboard-leaderboard__item--gold';
+                            $badgeLabel = 'On fire';
+                        } elseif ($index === 1) {
+                            $rankClass = ' dashboard-leaderboard__item--silver';
+                            $badgeLabel = 'Runner-up';
+                        } elseif ($index === 2) {
+                            $rankClass = ' dashboard-leaderboard__item--bronze';
+                            $badgeLabel = 'Climbing';
+                        }
                     ?>
-                    <li class="dashboard-leaderboard__item">
-                        <span class="dashboard-leaderboard__rank">#<?php echo $index + 1; ?></span>
-                        <span class="dashboard-leaderboard__name"><?php echo htmlspecialchars($name); ?></span>
+                    <li class="dashboard-leaderboard__item<?php echo $rankClass; ?>" style="--leaderboard-progress: <?php echo $percent; ?>%;">
+                        <div class="dashboard-leaderboard__avatar" aria-hidden="true"><?php echo htmlspecialchars($initials); ?></div>
+                        <div class="dashboard-leaderboard__meta">
+                            <div class="dashboard-leaderboard__heading">
+                                <span class="dashboard-leaderboard__rank">#<?php echo $index + 1; ?></span>
+                                <span class="dashboard-leaderboard__name"><?php echo htmlspecialchars($name); ?></span>
+                                <?php if ($badgeLabel !== ''): ?>
+                                <span class="dashboard-leaderboard__badge"><?php echo htmlspecialchars($badgeLabel); ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="dashboard-leaderboard__progress" role="presentation">
+                                <span class="dashboard-leaderboard__progress-bar"></span>
+                            </div>
+                        </div>
                         <span class="dashboard-leaderboard__points"><?php echo $points; ?> pts</span>
                     </li>
                     <?php endforeach; ?>

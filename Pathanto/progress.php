@@ -355,48 +355,6 @@ function get_public_feed($limit = 10, $currentUserId = null)
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
-    if (empty($rows) && $currentUserId) {
-        $fallbackAnswerSelect = $hasAnswersTable ? '(SELECT answer_text FROM answers WHERE question_id = qa.question_id LIMIT 1)' : 'NULL';
-        $fallbackSql = "SELECT qa.id AS attempt_id,
-                               qa.user_id,
-                               qa.question_id,
-                               qa.correct,
-                               qa.user_note AS note,
-                               qa.created_at,
-                               COALESCE(q.question_text, CONCAT('Question #', qa.question_id)) AS question_text,
-                               $fallbackAnswerSelect AS answer_text,
-                               COALESCE(u.name, CONCAT('User #', qa.user_id)) AS display_name
-                        FROM question_attempts qa
-                        LEFT JOIN questions q ON qa.question_id = q.id
-                        LEFT JOIN users u ON qa.user_id = u.id
-                        WHERE qa.user_id = ?
-                        ORDER BY qa.created_at DESC
-                        LIMIT ?";
-        $fallbackStmt = $conn->prepare($fallbackSql);
-        if ($fallbackStmt) {
-            $fallbackStmt->bind_param('ii', $currentUserId, $limit);
-            $fallbackStmt->execute();
-            $fallbackRows = $fallbackStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-            $fallbackStmt->close();
-
-            if (!empty($fallbackRows)) {
-                foreach ($fallbackRows as $fallbackRow) {
-                    if (!empty($fallbackRow['attempt_id'])) {
-                        ensure_feed_from_attempt((int) $fallbackRow['attempt_id']);
-                    }
-                }
-
-                $stmt = $conn->prepare($sql);
-                if ($stmt) {
-                    $stmt->bind_param('i', $limit);
-                    $stmt->execute();
-                    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-                    $stmt->close();
-                }
-            }
-        }
-    }
-
     return build_feed_payload($rows, $currentUserId);
 }
 

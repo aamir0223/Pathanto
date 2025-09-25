@@ -16,9 +16,10 @@
   <link rel="stylesheet" href="/Pathanto/public/css/chapterList.css">
   <link rel="stylesheet" href="/Pathanto/public/css/common.css">
    <link rel="stylesheet" href="/Pathanto/public/css/quize.css">
-   <link rel="stylesheet" href="/Pathanto/public/css/question.css">
+  <link rel="stylesheet" href="/Pathanto/public/css/question.css">
   <link rel="stylesheet" href="/Pathanto/public/css/auth.css">
   <link rel="stylesheet" href="/Pathanto/public/css/dashboard.css">
+  <link rel="stylesheet" href="/Pathanto/public/css/leaderboard.css">
   
  
 
